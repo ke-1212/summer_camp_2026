@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ワースト・ボリューム選手権</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+JP:wght@400;700;900&display=swap">
+<style>
+  /* ヴィンテージ・オーディオ機材のフロントパネルに寄せた単一テーマ。
+     明暗どちらのホスト地色でも成立するよう、body に地色を明示する。 */
+  :root {
+    --ground: #221F1A;
+    --panel:  #2E2A23;
+    --panel2: #38332B;
+    --line:   #4A4338;
+    --ink:    #EFE7D3;
+    --dim:    #9A917D;
+    --amber:  #E8A33D;
+    --red:    #C4442E;
+    --green:  #7FA05B;
+
+    --jp: "Noto Sans JP", system-ui, sans-serif;
+    --panelface: "Barlow Condensed", "Noto Sans JP", sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--jp);
+    /* 操作面をスワイプしてもページが動かないようにする */
+    overscroll-behavior: none;
+  }
+
+  #app {
+    max-width: 460px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background:
+      linear-gradient(180deg, #2A261F 0%, var(--panel) 12%, var(--panel) 88%, #241F19 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* パネルのヘアライン。機材の抜き板の質感 */
+  #app::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      180deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);
+    pointer-events: none;
+  }
+
+  .screen { display: none; flex: 1; flex-direction: column; }
+  .screen.on { display: flex; }
+
+  /* ---------- タイトル ---------- */
+  #title {
+    justify-content: center;
+    gap: 28px;
+    padding: 32px 24px 40px;
+    text-align: center;
+  }
+  .eyebrow {
+    font-family: var(--panelface);
+    font-size: 13px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  #title h1 {
+    font-size: clamp(30px, 9vw, 40px);
+    font-weight: 900;
+    line-height: 1.18;
+    margin: 10px 0 0;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+  #title h1 em {
+    font-style: normal;
+    color: var(--amber);
+  }
+  .lede {
+    font-size: 14px;
+    line-height: 1.85;
+    color: var(--dim);
+    max-width: 30em;
+    margin: 0 auto;
+  }
+  .roster {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    text-align: left;
+  }
+  .roster-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 13px;
+    background: var(--panel2);
+  }
+  .roster-name { font-size: 14px; font-weight: 700; }
+  .pain {
+    font-family: var(--panelface);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ground);
+    background: var(--dim);
+    padding: 3px 7px;
+    white-space: nowrap;
+  }
+  .pain[data-pain="randomness"] { background: var(--amber); }
+  .pain[data-pain="precision"]  { background: var(--red); color: var(--ink); }
+  .pain[data-pain="effort"]     { background: var(--green); }
+
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  button:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+  }
+  .btn {
+    font-family: var(--panelface);
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    padding: 15px 20px;
+    background: var(--amber);
+    color: #221F1A;
+    border: 1px solid #F0BC6A;
+    box-shadow: 0 3px 0 #A9742A;
+    width: 100%;
+  }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #A9742A; }
+
+  .credit {
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: #7C7565;
+  }
+  .credit a { color: var(--dim); }
+
+  /* ---------- プレイ画面 ---------- */
+  #play { padding: 14px 16px 20px; gap: 12px; justify-content: center; }
+
+  .topbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .readout { display: flex; align-items: baseline; gap: 10px; }
+  .readout .label {
+    font-family: var(--panelface);
+    font-size: 12px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  .readout .num {
+    font-family: var(--panelface);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: .9;
+  }
+  #targetNum { font-size: 40px; color: var(--amber); }
+  #volNum    { font-size: 40px; color: var(--ink); }
+  #volNum.hit { color: var(--green); }
+  .tol {
+    font-family: var(--panelface);
+    font-size: 13px;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lives { display: flex; gap: 5px; }
+  .life {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.35);
+  }
+  .life.out { background: #443E34; }
+
+  /* VU メーター */
+  .meter {
+    position: relative;
+    height: 34px;
+    background: #1B1813;
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .meter-ticks {
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      90deg, var(--line) 0 1px, transparent 1px 10%);
+    opacity: .8;
+  }
+  #zone {
+    position: absolute; top: 0; bottom: 0;
+    background: rgba(232,163,61,.26);
+    border-left: 1px solid var(--amber);
+    border-right: 1px solid var(--amber);
+  }
+  #needle {
+    position: absolute; top: -1px; bottom: -1px;
+    width: 3px;
+    margin-left: -1.5px;
+    background: var(--ink);
+    box-shadow: 0 0 7px rgba(239,231,211,.55);
+  }
+
+  .timer {
+    height: 5px;
+    background: #1B1813;
+    border: 1px solid var(--line);
+  }
+  #timerFill {
+    height: 100%;
+    width: 100%;
+    background: var(--dim);
+    transform-origin: left;
+  }
+  #timerFill.warn { background: var(--red); }
+
+  .ctrl-name {
+    font-family: var(--panelface);
+    font-size: 12.5px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--dim);
+    text-align: center;
+  }
+
+  /* コントローラの操作面 */
+  #stage {
+    flex: 1;
+    min-height: 250px;
+    max-height: 420px;
+    position: relative;
+    background: #1E1B16;
+    border: 1px solid var(--line);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow: hidden;
+  }
+
+  /* ---------- 共通オーバーレイ（指示・判定） ---------- */
+  #overlay {
+    position: absolute; inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    z-index: 10;
+    background: rgba(28,25,20,.93);
+  }
+  #overlay.on { display: flex; }
+  #overlay .big {
+    font-size: clamp(30px, 10vw, 44px);
+    font-weight: 900;
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+  #overlay .big b { color: var(--amber); font-size: 1.5em; }
+  #overlay .sub {
+    font-family: var(--panelface);
+    font-size: 14px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-top: 14px;
+  }
+  .ok   { color: var(--green); }
+  .bad  { color: var(--red); }
+
+  @keyframes pop { from { transform: scale(.82); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  #overlay .inner { animation: pop .18s ease-out both; }
+
+  /* ---------- 結果 ---------- */
+  #over { justify-content: center; gap: 26px; padding: 32px 24px; text-align: center; }
+  #over h2 { font-size: 30px; font-weight: 900; margin: 0; }
+  .score {
+    font-family: var(--panelface);
+    font-size: 84px;
+    font-weight: 700;
+    line-height: .85;
+    color: var(--amber);
+    font-variant-numeric: tabular-nums;
+  }
+  .score-label {
+    font-family: var(--panelface);
+    font-size: 13px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-top: 10px;
+  }
+
+  /* ---------- 各コントローラ ---------- */
+  .ground-line {
+    position: absolute;
+    left: 0; right: 0; bottom: 40px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .scale-marks {
+    position: absolute;
+    left: 0; right: 0; bottom: 12px;
+    height: 24px;
+    font-family: var(--panelface);
+    font-size: 11px;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .scale-marks span {
+    position: absolute;
+    transform: translateX(-50%);
+    top: 6px;
+  }
+
+  #cannon {
+    position: absolute;
+    bottom: 40px;
+    left: 8%;
+    width: 46px; height: 46px;
+    margin-left: -23px;
+    display: grid;
+    place-items: center;
+    font-size: 30px;
+    transform-origin: 50% 78%;
+    line-height: 1;
+  }
+  .bullet {
+    position: absolute;
+    width: 12px; height: 12px;
+    margin-left: -6px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 10px rgba(232,163,61,.75);
+  }
+  .splat {
+    position: absolute;
+    bottom: 34px;
+    width: 3px; height: 13px;
+    margin-left: -1.5px;
+    background: var(--red);
+  }
+  .charge-bar {
+    position: absolute;
+    left: 14px; right: 14px; top: 14px;
+    height: 6px;
+    background: #15130F;
+    border: 1px solid var(--line);
+  }
+  .charge-bar i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--red);
+  }
+
+  .hintline {
+    position: absolute;
+    left: 0; right: 0; top: 30px;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--dim);
+  }
+
+  .slider-track {
+    position: absolute;
+    left: 24px; right: 24px;
+    top: 50%;
+    height: 8px;
+    margin-top: -4px;
+    background: #15130F;
+    border: 1px solid var(--line);
+  }
+  .knob {
+    position: absolute;
+    top: 50%;
+    width: 42px; height: 42px;
+    margin: -21px 0 0 -21px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #6A6151, #423C32);
+    border: 1px solid #7C7261;
+    box-shadow: 0 4px 10px rgba(0,0,0,.45);
+  }
+
+  #pump {
+    position: absolute;
+    left: 50%; bottom: 46px;
+    width: 132px; height: 132px;
+    margin-left: -66px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 34%, #6A6151, #3A342B);
+    border: 2px solid #7C7261;
+    display: grid;
+    place-items: center;
+    font-family: var(--panelface);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    box-shadow: 0 7px 0 #241F19;
+  }
+  #pump.down { transform: translateY(6px); box-shadow: 0 1px 0 #241F19; }
+  .leak {
+    position: absolute;
+    left: 0; right: 0; bottom: 14px;
+    text-align: center;
+    font-family: var(--panelface);
+    font-size: 12px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--red);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before { animation-duration: .001s !important; transition-duration: .001s !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <section class="screen on" id="title">
+    <div>
+      <p class="eyebrow">Bad UI Battles / 音量調整の部</p>
+      <h1>ワースト・<em>ボリューム</em>選手権</h1>
+    </div>
+
+    <p class="lede">
+      お題はいつも同じ。<strong>音量を指定の値に合わせる</strong>だけ。<br>
+      毎回変わるのは、その音量つまみのほうです。
+      1本8秒、鳴り終わった瞬間の値で判定します。
+    </p>
+
+    <div class="roster">
+      <div class="roster-row">
+        <span class="roster-name">ボリューム・ランチャー</span>
+        <span class="pain" data-pain="randomness">再現性がない</span>
+      </div>
+      <div class="roster-row">
+        <span class="roster-name">物理スライダー</span>
+        <span class="pain" data-pain="precision">精度が出ない</span>
+      </div>
+      <div class="roster-row">
+        <span class="roster-name">空気入れ</span>
+        <span class="pain" data-pain="effort">操作量が多い</span>
+      </div>
+    </div>
+
+    <button class="btn" id="startBtn">はじめる</button>
+
+    <p class="credit">
+      2017年に Reddit で生まれた「世界最悪の音量調整UI」の系譜です。
+      ランチャーは <a href="https://github.com/ZeyuKeithFu/WorstVolumeControl" target="_blank" rel="noopener">ZeyuKeithFu/WorstVolumeControl</a> の
+      VolumeLauncher が原典。<br>
+      使いにくさで人を困らせて得をする「ダークパターン」とは別物で、誰も損をしないから笑えるジャンルです。
+    </p>
+  </section>
+
+  <section class="screen" id="play">
+    <div class="topbar">
+      <div class="readout">
+        <div>
+          <div class="label">目標</div>
+          <div class="num" id="targetNum">70</div>
+        </div>
+        <div>
+          <div class="label">現在</div>
+          <div class="num" id="volNum">0</div>
+        </div>
+        <div class="tol" id="tolText">±5</div>
+      </div>
+      <div class="lives" id="lives"></div>
+    </div>
+
+    <div class="meter">
+      <div class="meter-ticks"></div>
+      <div id="zone"></div>
+      <div id="needle"></div>
+    </div>
+
+    <div class="timer"><div id="timerFill"></div></div>
+
+    <div class="ctrl-name" id="ctrlName"></div>
+    <div id="stage"></div>
+  </section>
+
+  <section class="screen" id="over">
+    <div>
+      <h2 id="overTitle">おわり</h2>
+    </div>
+    <div>
+      <div class="score" id="scoreNum">0</div>
+      <div class="score-label">合わせられた回数</div>
+    </div>
+    <p class="lede" id="overNote"></p>
+    <button class="btn" id="againBtn">もう一度</button>
+  </section>
+
+  <div id="overlay"><div class="inner" id="overlayInner"></div></div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  /* ============ 効果音（Web Audio で合成。音源ファイルは持たない） ============ */
+  let ac = null;
+  function audio() {
+    if (!ac) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) ac = new Ctx();
+    }
+    if (ac && ac.state === "suspended") ac.resume();
+    return ac;
+  }
+  function tone(freq, dur, type = "square", vol = .16, slideTo = null) {
+    const c = audio();
+    if (!c) return;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, c.currentTime);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, c.currentTime + dur);
+    g.gain.setValueAtTime(vol, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + dur);
+    o.connect(g).connect(c.destination);
+    o.start();
+    o.stop(c.currentTime + dur + .02);
+  }
+  function noise(dur = .12, vol = .12) {
+    const c = audio();
+    if (!c) return;
+    const n = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, n, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const src = c.createBufferSource(), g = c.createGain();
+    src.buffer = buf;
+    g.gain.value = vol;
+    src.connect(g).connect(c.destination);
+    src.start();
+  }
+  const sfx = {
+    launch:   () => { noise(.16, .16); tone(180, .18, "sawtooth", .1, 90); },
+    impact:   () => tone(120, .16, "square", .14, 55),
+    pump:     () => tone(420, .07, "square", .1, 260),
+    grab:     () => tone(300, .05, "triangle", .08),
+    clear:    () => { tone(660, .1, "square", .15); setTimeout(() => tone(990, .18, "square", .15), 95); },
+    fail:     () => { tone(200, .14, "sawtooth", .14); setTimeout(() => tone(120, .26, "sawtooth", .14), 130); },
+    tick:     () => tone(1200, .04, "square", .07),
+    gameover: () => {
+      [440, 350, 262, 180].forEach((f, i) => setTimeout(() => tone(f, .3, "sawtooth", .14), i * 160));
+    }
+  };
+
+  /* ============ コントローラ定義 ============
+     各コントローラは音量を報告するだけ。目標との判定・タイマー・ライフ・
+     画面遷移はいっさい知らない。mount は後始末の関数を返す。 */
+
+  /** 目盛りと地面。ランチャーとスライダーで共有する */
+  function addScale(root, place) {
+    const marks = document.createElement("div");
+    marks.className = "scale-marks";
+    if (place) Object.assign(marks.style, place);
+    [0, 25, 50, 75, 100].forEach((v) => {
+      const s = document.createElement("span");
+      s.textContent = v;
+      s.style.left = v + "%";
+      marks.appendChild(s);
+    });
+    root.appendChild(marks);
+  }
+
+  const CONTROLLERS = [
+    {
+      id: "launcher",
+      name: "ボリューム・ランチャー",
+      pain: "randomness",
+      /* 原典 (ZeyuKeithFu/WorstVolumeControl の VolumeLauncher) は仰角だけが伸びるが、
+         それだと出せる音量の下限が高くなりすぎるので、仰角と初速をいっしょに上げている。 */
+      mount(root, { onChange }) {
+        root.innerHTML =
+          '<div class="hintline">押し続けて角度をつけ、離して撃つ。落ちた場所が音量。</div>' +
+          '<div class="charge-bar"><i id="chg"></i></div>' +
+          '<div class="ground-line"></div>' +
+          '<div id="cannon">🔊</div>';
+        addScale(root);
+
+        const cannon = $("cannon"), chg = $("chg");
+        let charging = false, c = 0;
+        let bullet = null, bx = 0, by = 0, vx = 0, vy = 0, el = null;
+        let last = performance.now(), raf = 0;
+
+        const G = 400;          // 正規化単位/秒^2（横幅 100 単位のスケール）
+        const START_X = 8, START_Y = 6.7;
+
+        function unit() { return root.clientWidth / 100; }
+
+        function down(e) {
+          e.preventDefault();
+          if (bullet) return;   // 飛翔中は撃てない
+          charging = true; c = 0;
+          sfx.grab();
+        }
+        function up() {
+          if (!charging) return;
+          charging = false;
+          const angle = (15 + 45 * c) * Math.PI / 180;
+          const v0 = 87 + 126 * c;
+          bx = START_X; by = START_Y;
+          vx = v0 * Math.cos(angle);
+          vy = v0 * Math.sin(angle);
+          el = document.createElement("div");
+          el.className = "bullet";
+          root.appendChild(el);
+          bullet = true;
+          chg.style.width = "0%";
+          sfx.launch();
+        }
+
+        function frame(now) {
+          const dt = Math.min(.05, (now - last) / 1000);
+          last = now;
+
+          if (charging) {
+            c = Math.min(1, c + dt);
+            chg.style.width = (c * 100) + "%";
+            cannon.style.transform = "rotate(" + (-(15 + 45 * c)) + "deg)";
+          }
+
+          if (bullet) {
+            vy -= G * dt;
+            bx += vx * dt;
+            by += vy * dt;
+            if (by <= 0) {
+              // 着弾。x 座標がそのまま音量になる
+              const v = Math.round(clamp(bx, 0, 100));
+              onChange(v);
+              el.remove(); el = null; bullet = null;
+              const mark = document.createElement("div");
+              mark.className = "splat";
+              mark.style.left = v + "%";
+              root.appendChild(mark);
+              cannon.style.transform = "rotate(0deg)";
+              sfx.impact();
+            } else {
+              el.style.left = bx + "%";
+              el.style.bottom = (40 + by * unit()) + "px";
+            }
+          }
+          raf = requestAnimationFrame(frame);
+        }
+        raf = requestAnimationFrame(frame);
+
+        root.addEventListener("pointerdown", down);
+        window.addEventListener("pointerup", up);
+        window.addEventListener("pointercancel", up);
+
+        return () => {
+          cancelAnimationFrame(raf);
+          root.removeEventListener("pointerdown", down);
+          window.removeEventListener("pointerup", up);
+          window.removeEventListener("pointercancel", up);
+        };
+      }
+    },
+
+    {
+      id: "physics-slider",
+      name: "物理スライダー",
+      pain: "precision",
+      /* つまみが 50 に引かれるバネと弱い減衰を持つ。離すと振り子のように揺れ続け、
+         狙った値ではまず止まらない。 */
+      mount(root, { onChange }) {
+        root.innerHTML =
+          '<div class="hintline">つまみを離すと揺れます。止まるまで待つ余裕はありません。</div>' +
+          '<div class="slider-track"></div>' +
+          '<div class="knob" id="knob"></div>';
+        addScale(root, { top: "calc(50% + 22px)", bottom: "auto" });
+
+        const knob = $("knob");
+        let x = 50, v = 0, dragging = false;
+        let lastX = 50, lastT = performance.now();
+        let last = performance.now(), raf = 0;
+
+        const K = 7, DAMP = .4;
+
+        function pos(e) {
+          const r = root.getBoundingClientRect();
+          return clamp((e.clientX - r.left) / r.width * 100, 0, 100);
+        }
+        function down(e) {
+          e.preventDefault();
+          dragging = true; v = 0;
+          lastX = x = pos(e); lastT = performance.now();
+          sfx.grab();
+        }
+        function move(e) {
+          if (!dragging) return;
+          const now = performance.now();
+          const nx = pos(e);
+          const dt = Math.max(.008, (now - lastT) / 1000);
+          v = (nx - lastX) / dt;
+          x = nx; lastX = nx; lastT = now;
+        }
+        function up() { dragging = false; }
+
+        function frame(now) {
+          const dt = Math.min(.032, (now - last) / 1000);
+          last = now;
+          if (!dragging) {
+            const a = -K * (x - 50) - DAMP * v;
+            v += a * dt;
+            x += v * dt;
+            if (x < 0)   { x = 0;   v = -v * .7; }
+            if (x > 100) { x = 100; v = -v * .7; }
+          }
+          knob.style.left = x + "%";
+          onChange(Math.round(x));
+          raf = requestAnimationFrame(frame);
+        }
+        raf = requestAnimationFrame(frame);
+
+        root.addEventListener("pointerdown", down);
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", up);
+        window.addEventListener("pointercancel", up);
+
+        return () => {
+          cancelAnimationFrame(raf);
+          root.removeEventListener("pointerdown", down);
+          window.removeEventListener("pointermove", move);
+          window.removeEventListener("pointerup", up);
+          window.removeEventListener("pointercancel", up);
+        };
+      }
+    },
+
+    {
+      id: "pump",
+      name: "空気入れ",
+      pain: "effort",
+      /* 押すと上がるが、常に抜け続ける。手を止めた瞬間から下がるので、
+         目標値をタイムアップまで保つには一定のペースで押し続けるしかない。 */
+      mount(root, { onChange }) {
+        root.innerHTML =
+          '<div class="hintline">押すと入りますが、ずっと抜けています。</div>' +
+          '<button id="pump" type="button">押す</button>' +
+          '<div class="leak">Leaking &minus;14 / sec</div>';
+
+        const pump = $("pump");
+        let x = 0, last = performance.now(), raf = 0;
+        const GAIN = 9, LEAK = 14;
+
+        function down(e) {
+          e.preventDefault();
+          x = clamp(x + GAIN, 0, 100);
+          pump.classList.add("down");
+          sfx.pump();
+        }
+        function up() { pump.classList.remove("down"); }
+
+        function frame(now) {
+          const dt = Math.min(.05, (now - last) / 1000);
+          last = now;
+          x = clamp(x - LEAK * dt, 0, 100);
+          onChange(Math.round(x));
+          raf = requestAnimationFrame(frame);
+        }
+        raf = requestAnimationFrame(frame);
+
+        pump.addEventListener("pointerdown", down);
+        window.addEventListener("pointerup", up);
+        window.addEventListener("pointercancel", up);
+
+        return () => {
+          cancelAnimationFrame(raf);
+          pump.removeEventListener("pointerdown", down);
+          window.removeEventListener("pointerup", up);
+          window.removeEventListener("pointercancel", up);
+        };
+      }
+    }
+  ];
+
+  /* ============ ゲーム進行 ============ */
+  const DURATION = 8;      // 1本あたりの秒数
+  const MAX_LIVES = 4;
+
+  const S = {
+    stage: 0, lives: MAX_LIVES, cleared: 0,
+    target: 50, tol: 5, volume: 0,
+    lastId: null, cleanup: null,
+    raf: 0, endAt: 0, ticked: -1
+  };
+
+  function show(id) {
+    document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id));
+  }
+  function overlay(html, ms) {
+    $("overlayInner").innerHTML = html;
+    $("overlay").classList.add("on");
+    return new Promise((r) => setTimeout(() => { $("overlay").classList.remove("on"); r(); }, ms));
+  }
+
+  function drawLives() {
+    $("lives").innerHTML = "";
+    for (let i = 0; i < MAX_LIVES; i++) {
+      const d = document.createElement("div");
+      d.className = "life" + (i < S.lives ? "" : " out");
+      $("lives").appendChild(d);
+    }
+  }
+
+  function drawHud() {
+    $("volNum").textContent = S.volume;
+    $("needle").style.left = S.volume + "%";
+    const hit = Math.abs(S.volume - S.target) <= S.tol;
+    $("volNum").classList.toggle("hit", hit);
+  }
+
+  function pickController() {
+    const pool = CONTROLLERS.filter((c) => c.id !== S.lastId);
+    const c = pool[Math.floor(Math.random() * pool.length)];
+    S.lastId = c.id;
+    return c;
+  }
+
+  async function nextStage() {
+    S.stage++;
+    S.tol = Math.max(2, 5 - Math.floor((S.stage - 1) / 5));
+    // ランチャーの最短飛距離が約 29 なので、目標は 30〜90 の 5 刻み
+    S.target = 30 + Math.floor(Math.random() * 13) * 5;
+    S.volume = 0;
+
+    const ctrl = pickController();
+
+    $("targetNum").textContent = S.target;
+    $("tolText").textContent = "±" + S.tol;
+    $("zone").style.left = (S.target - S.tol) + "%";
+    $("zone").style.width = (S.tol * 2) + "%";
+    $("ctrlName").textContent = ctrl.name;
+    drawLives();
+    drawHud();
+    show("play");
+
+    await overlay(
+      '<div class="big">音量を <b>' + S.target + '</b> にしろ！</div>' +
+      '<div class="sub">' + ctrl.name + " / ±" + S.tol + "</div>", 1100);
+
+    startStage(ctrl);
+  }
+
+  function startStage(ctrl) {
+    const stage = $("stage");
+    stage.innerHTML = "";
+    S.cleanup = ctrl.mount(stage, {
+      target: S.target,
+      onChange: (v) => { S.volume = clamp(Math.round(v), 0, 100); }
+    });
+
+    S.endAt = performance.now() + DURATION * 1000;
+    S.ticked = -1;
+    $("timerFill").classList.remove("warn");
+
+    const loop = (now) => {
+      const left = Math.max(0, S.endAt - now);
+      const ratio = left / (DURATION * 1000);
+      $("timerFill").style.transform = "scaleX(" + ratio + ")";
+      drawHud();
+
+      const sec = Math.ceil(left / 1000);
+      if (sec <= 3) {
+        $("timerFill").classList.add("warn");
+        if (sec !== S.ticked) { S.ticked = sec; if (sec > 0) sfx.tick(); }
+      }
+
+      if (left <= 0) { judge(); return; }
+      S.raf = requestAnimationFrame(loop);
+    };
+    S.raf = requestAnimationFrame(loop);
+  }
+
+  async function judge() {
+    cancelAnimationFrame(S.raf);
+    if (S.cleanup) { S.cleanup(); S.cleanup = null; }
+    $("stage").innerHTML = "";
+
+    const diff = Math.abs(S.volume - S.target);
+    const ok = diff <= S.tol;
+
+    if (ok) { S.cleared++; sfx.clear(); }
+    else    { S.lives--; sfx.fail(); }
+    drawLives();
+
+    await overlay(
+      ok
+        ? '<div class="big ok">ぴったり！</div><div class="sub">' + S.volume + " / 目標 " + S.target + "</div>"
+        : '<div class="big bad">' + (S.volume > S.target ? "上げすぎ" : "足りない") + "</div>" +
+          '<div class="sub">' + S.volume + " / 目標 " + S.target + "（" + diff + " ずれ）</div>",
+      1000);
+
+    if (S.lives <= 0) gameOver();
+    else nextStage();
+  }
+
+  function gameOver() {
+    sfx.gameover();
+    $("scoreNum").textContent = S.cleared;
+    $("overTitle").textContent = S.cleared >= 8 ? "音量マスター" : "おわり";
+    $("overNote").textContent =
+      S.cleared === 0 ? "1本も合いませんでした。それが正常な反応です。"
+      : S.cleared < 4 ? "この UI で合うほうがどうかしています。"
+      : "かなり慣れてしまいましたね。困ったことです。";
+    show("over");
+  }
+
+  function startGame() {
+    audio();                      // 最初のタップで AudioContext を起こす
+    S.stage = 0; S.lives = MAX_LIVES; S.cleared = 0; S.lastId = null;
+    nextStage();
+  }
+
+  $("startBtn").addEventListener("click", startGame);
+  $("againBtn").addEventListener("click", startGame);
+})();
+</script>
+</body>
+</html>
