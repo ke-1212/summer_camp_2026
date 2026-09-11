@@ -3,38 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ワースト・ボリューム選手権</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+JP:wght@400;700;900&display=swap">
+<title>Bad UI選手権</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap">
 <style>
-  /* ヴィンテージ・オーディオ機材のフロントパネルに寄せた単一テーマ。
-     明暗どちらのホスト地色でも成立するよう、body に地色を明示する。 */
+  /* ありふれた登録フォームの見た目にして、中身だけを最悪にする。
+     地の部分は読みやすく作る（読めないと理不尽さが伝わらないため）。 */
   :root {
-    --ground: #221F1A;
-    --panel:  #2E2A23;
-    --panel2: #38332B;
-    --line:   #4A4338;
-    --ink:    #EFE7D3;
-    --dim:    #9A917D;
-    --amber:  #E8A33D;
-    --red:    #C4442E;
-    --green:  #7FA05B;
-    --blue:   #6F93A8;
-    --well:   #1E1B16;
-    --deep:   #15130F;
-
+    --bg:     #EEF0F4;
+    --card:   #FFFFFF;
+    --ink:    #1B1F26;
+    --dim:    #6B7280;
+    --line:   #D6DAE2;
+    --accent: #2563EB;
+    --ok:     #15803D;
+    --bad:    #C4442E;
     --jp: "Noto Sans JP", system-ui, sans-serif;
-    --panelface: "Barlow Condensed", "Noto Sans JP", sans-serif;
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   body {
     margin: 0;
-    background: var(--ground);
+    background: var(--bg);
     color: var(--ink);
     font-family: var(--jp);
-    /* 操作面をスワイプしてもページが動かないようにする */
-    overscroll-behavior: none;
+    overscroll-behavior-y: none;
   }
 
   #app {
@@ -43,788 +36,255 @@
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    background:
-      linear-gradient(180deg, #2A261F 0%, var(--panel) 12%, var(--panel) 88%, #241F19 100%);
-    position: relative;
-    overflow: hidden;
-    overflow: clip;
+    background: var(--bg);
   }
 
-  /* パネルのヘアライン。機材の抜き板の質感 */
-  #app::before {
-    content: "";
-    position: absolute; inset: 0;
-    background: repeating-linear-gradient(
-      180deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);
-    pointer-events: none;
-  }
+  /* 進捗バー（正直ではない） */
+  #bar { height: 8px; background: #DDE1E8; flex: none; }
+  #fill { height: 100%; width: 0; background: var(--accent); transition: width .5s ease; }
 
-  .screen { display: none; flex: 1; flex-direction: column; }
-  .screen.on { display: flex; }
+  header.head { padding: 14px 16px 0; flex: none; }
+  .step-no { font-size: 11px; letter-spacing: .12em; color: var(--dim); }
+  h1 { margin: 4px 0 0; font-size: 17px; font-weight: 700; line-height: 1.5; }
 
-  /* ---------- タイトル ---------- */
-  #title {
-    justify-content: center;
-    gap: 24px;
-    padding: 30px 22px 36px;
-  }
-  .title-head { text-align: center; }
-  .eyebrow {
-    font-family: var(--panelface);
-    font-size: 13px;
-    letter-spacing: .22em;
-    text-transform: uppercase;
-    color: var(--dim);
-  }
-  #title h1 {
-    font-size: clamp(30px, 9vw, 40px);
-    font-weight: 900;
-    line-height: 1.18;
-    margin: 10px 0 0;
-    text-wrap: balance;
-    color: var(--ink);
-  }
-  .nb { display: inline-block; }
-  #title h1 em {
-    font-style: normal;
-    color: var(--amber);
-  }
-  .lede {
-    font-size: 14px;
-    line-height: 1.85;
-    color: var(--dim);
-    max-width: 30em;
-    margin: 0 auto;
-  }
-  #title .lede { text-align: center; }
+  main { flex: 1; padding: 14px 16px 24px; display: flex; flex-direction: column; }
 
-  .section-label {
-    font-family: var(--panelface);
-    font-size: 12px;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: var(--dim);
-    margin-bottom: 8px;
-  }
-
-  .topic-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--line);
+  .card {
+    background: var(--card);
     border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
   }
-  .topic-cell {
-    background: var(--panel2);
-    padding: 9px 6px;
-    text-align: center;
-  }
-  .topic-cell b { display: block; font-size: 13px; }
-  .topic-cell span {
-    font-family: var(--panelface);
-    font-size: 15px;
-    color: var(--amber);
-    font-variant-numeric: tabular-nums;
-  }
+  .card + .card { margin-top: 12px; }
 
-  .roster {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    background: var(--line);
-    border: 1px solid var(--line);
-  }
-  .roster-row {
-    display: grid;
-    grid-template-columns: 7.2em 1fr;
-    align-items: start;
-    gap: 10px;
-    padding: 9px 11px;
-    background: var(--panel2);
-  }
-  .pain {
-    font-family: var(--jp);
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--ground);
-    background: var(--dim);
-    padding: 3px 6px;
-    text-align: center;
-    white-space: nowrap;
-  }
-  .pain[data-pain="randomness"] { background: var(--amber); }
-  .pain[data-pain="precision"]  { background: var(--red); color: var(--ink); }
-  .pain[data-pain="effort"]     { background: var(--green); }
-  .pain[data-pain="social"]     { background: var(--blue); }
-  .names { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; line-height: 1.6; }
-  .names .only-topic { color: var(--dim); font-size: 11px; }
-  .names .locked { color: var(--dim); }
+  p { margin: 0 0 12px; font-size: 14px; line-height: 1.8; }
+  p:last-child { margin-bottom: 0; }
+  .note { font-size: 12px; color: var(--dim); line-height: 1.7; }
 
-  .optin {
-    display: grid;
-    gap: 8px;
-    padding: 12px;
-    border: 1px dashed var(--line);
-  }
-  .optin-btn {
-    font-size: 14px;
-    font-weight: 700;
-    padding: 10px 12px;
-    border: 1px solid var(--blue);
-    color: var(--ink);
-    text-align: left;
-  }
-  .optin-btn[aria-pressed="true"] { background: rgba(111,147,168,.18); }
-  #capStatus { font-size: 12px; line-height: 1.7; color: var(--dim); white-space: pre-line; }
-  #onlyNote {
-    font-size: 13px;
-    padding: 8px 10px;
-    background: rgba(232,163,61,.14);
-    border: 1px solid var(--amber);
-  }
-
-  button {
-    -webkit-tap-highlight-color: transparent;
+  label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  input[type="text"] {
+    width: 100%;
+    padding: 11px 12px;
     font: inherit;
-    color: inherit;
-    background: none;
-    border: none;
-    cursor: pointer;
+    font-size: 16px;          /* iOS で拡大されないように */
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #FBFCFD;
+    color: var(--ink);
   }
-  button:focus-visible,
-  [tabindex]:focus-visible,
-  input:focus-visible + span {
-    outline: 2px solid var(--amber);
-    outline-offset: 3px;
-  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
   .btn {
-    font-family: var(--panelface);
-    font-size: 19px;
-    font-weight: 700;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    padding: 15px 20px;
-    background: var(--amber);
-    color: #221F1A;
-    border: 1px solid #F0BC6A;
-    box-shadow: 0 3px 0 #A9742A;
+    display: block;
     width: 100%;
-  }
-  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #A9742A; }
-
-  /* タイトルが画面より長いので、「はじめる」はスクロールしても画面下に残す */
-  .start-dock {
-    position: sticky;
-    bottom: 0;
-    margin: 0 -22px -36px;
-    padding: 14px 22px calc(16px + env(safe-area-inset-bottom));
-    background: linear-gradient(180deg, rgba(46,42,35,0), var(--panel) 30%);
-  }
-
-  .credit {
-    font-size: 11.5px;
-    line-height: 1.7;
-    color: #7C7565;
-    margin: 0;
-  }
-  .credit a { color: var(--dim); }
-
-  /* ---------- プレイ画面 ---------- */
-  #play { padding: 14px 16px 20px; gap: 12px; justify-content: center; }
-
-  .topbar {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .readout { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
-  .readout .label {
-    font-family: var(--panelface);
-    font-size: 12px;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-    color: var(--dim);
-  }
-  .readout .num {
-    font-family: var(--panelface);
+    padding: 13px 16px;
+    font-size: 15px;
     font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    line-height: .9;
-    font-size: clamp(28px, 9vw, 40px);
-    white-space: nowrap;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #FFF;
   }
-  #targetNum { color: var(--amber); }
-  #volNum    { color: var(--ink); }
-  #volNum.hit { color: var(--green); }
-  .tol {
-    font-family: var(--panelface);
+  .btn:disabled { background: #AFC0E6; }
+
+  .rows { display: grid; gap: 10px; }
+  .err { color: var(--bad); font-size: 13px; font-weight: 700; margin-top: 8px; }
+
+  /* 通知 */
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    max-width: 92vw;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(27, 31, 38, .92);
+    color: #FFF;
     font-size: 13px;
-    color: var(--dim);
-    font-variant-numeric: tabular-nums;
+    display: none;
+    z-index: 50;
+  }
+  #toast.on { display: block; }
+
+  /* ---- 入口 ---- */
+  .decoy {
+    display: block;
+    width: 100%;
+    padding: 18px;
+    font-size: 17px;
+    font-weight: 700;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #FFF;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .decoy.second { background: #10B981; }
+  .decoy.third  { background: #F59E0B; }
+  .real-start { font-size: 9px; color: #C9CED6; padding: 2px 3px; }   /* 白地にうっすら */
+
+  /* ---- Cookie ---- */
+  .cookie-actions { position: relative; height: 132px; margin-top: 12px; }
+  #agreeBtn {
+    position: absolute;
+    left: 0; top: 0;
+    width: 62%;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #FFF;
+    transition: left .18s ease, top .18s ease;
+  }
+  .reject {
+    position: absolute;
+    right: 0; bottom: 0;
+    width: 62%;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
+    background: #111827;
+    color: #FFF;
+  }
+  .check-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    align-items: start;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.7;
+  }
+  .check-row input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--accent); }
+
+  /* ---- メール ---- */
+  .rtl { direction: rtl; unicode-bidi: bidi-override; text-align: left; }
+
+  /* ---- パスワード ---- */
+  .rules { margin-top: 12px; display: grid; gap: 6px; }
+  .rule { font-size: 13px; display: grid; grid-template-columns: 18px 1fr; gap: 6px; color: var(--dim); }
+  .rule.done { color: var(--ok); font-weight: 700; }
+
+  /* ---- 生年月日 ---- */
+  .radio-box {
+    height: 150px;
+    overflow-y: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 8px;
+    background: #FBFCFD;
+    touch-action: pan-y;
+  }
+  .radio-box.wide { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); height: auto; max-height: 150px; }
+  .radio-box label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 400;
+    margin: 0;
+    padding: 4px 0;
     white-space: nowrap;
   }
+  .radio-box input { width: 13px; height: 13px; accent-color: var(--accent); }
+  .picked { font-size: 13px; font-weight: 700; }
 
-  .lives { display: flex; gap: 5px; flex-shrink: 0; }
-  .life {
-    width: 11px; height: 11px;
-    border-radius: 50%;
-    background: var(--red);
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,.35);
-  }
-  .life.out { background: #443E34; }
-
-  /* VU メーター */
-  .meter {
+  /* ---- 音量などの設定 ---- */
+  .readout { display: flex; align-items: baseline; gap: 18px; margin: 10px 0; }
+  .readout b { font-size: 26px; font-variant-numeric: tabular-nums; }
+  .readout .t { color: var(--accent); }
+  .readout span { font-size: 12px; color: var(--dim); }
+  #ctrlArea {
     position: relative;
-    height: 34px;
-    background: #1B1813;
+    height: 220px;
     border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #F7F8FA;
     overflow: hidden;
-  }
-  .meter-ticks {
-    position: absolute; inset: 0;
-    background: repeating-linear-gradient(
-      90deg, var(--line) 0 1px, transparent 1px 10%);
-    opacity: .8;
-  }
-  #zone {
-    position: absolute; top: 0; bottom: 0;
-    min-width: 3px;
-    background: rgba(232,163,61,.26);
-    border-left: 1px solid var(--amber);
-    border-right: 1px solid var(--amber);
-  }
-  #needle {
-    position: absolute; top: -1px; bottom: -1px;
-    width: 3px;
-    margin-left: -1.5px;
-    background: var(--ink);
-    box-shadow: 0 0 7px rgba(239,231,211,.55);
-  }
-
-  .timer {
-    height: 5px;
-    background: #1B1813;
-    border: 1px solid var(--line);
-  }
-  #timerFill {
-    height: 100%;
-    width: 100%;
-    background: var(--dim);
-    transform-origin: left;
-  }
-  #timerFill.warn { background: var(--red); }
-
-  .ctrl-name {
-    font-size: 12.5px;
-    letter-spacing: .08em;
-    color: var(--dim);
-    text-align: center;
-  }
-
-  /* コントローラの操作面 */
-  #stage {
-    flex: 1;
-    min-height: 250px;
-    max-height: 420px;
-    position: relative;
-    background: var(--well);
-    border: 1px solid var(--line);
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
-    overflow: hidden;
   }
+  .hint { position: absolute; left: 10px; right: 10px; top: 10px; text-align: center; font-size: 12px; color: var(--dim); pointer-events: none; }
+  .scale { position: absolute; left: 0; right: 0; bottom: 8px; height: 18px; font-size: 10px; color: var(--dim); font-variant-numeric: tabular-nums; pointer-events: none; }
+  .scale span { position: absolute; transform: translateX(-50%); }
+  .scale span:first-child { transform: none; left: 4px !important; }
+  .scale span:last-child { transform: translateX(-100%); left: calc(100% - 4px) !important; }
+  .track { position: absolute; left: 24px; right: 24px; top: 50%; height: 6px; margin-top: -3px; background: #DDE1E8; border-radius: 3px; }
+  .knob { position: absolute; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: #FFF; border: 2px solid var(--accent); box-shadow: 0 2px 6px rgba(0,0,0,.18); }
+  .round { position: absolute; left: 50%; bottom: 40px; width: 116px; height: 116px; margin-left: -58px; border-radius: 50%; background: var(--accent); color: #FFF; font-weight: 700; display: grid; place-items: center; }
+  .round.down { transform: translateY(4px); }
+  .leak { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-size: 11px; color: var(--bad); }
+  .stone { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; background: #FFF; border: 3px solid var(--bad); }
+  .sheet { position: absolute; left: 26%; right: 26%; top: 14px; bottom: 14px; background: #E7EDF2; border-left: 1px solid var(--line); border-right: 1px solid var(--line); }
+  .pi-strip { position: absolute; left: 0; right: 0; top: 50%; height: 62px; margin-top: -31px; overflow-x: auto; white-space: nowrap; background: #FFF; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); scrollbar-width: none; touch-action: pan-x; }
+  .pi-strip::-webkit-scrollbar { display: none; }
+  .pi-digits { display: inline-block; font-size: 28px; line-height: 62px; font-variant-numeric: tabular-nums; color: var(--dim); }
+  .pi-digits span { display: inline-block; width: 26px; text-align: center; }
+  .pi-window { position: absolute; left: 50%; top: 50%; width: 56px; height: 72px; margin: -36px 0 0 -28px; border: 2px solid var(--accent); pointer-events: none; }
+  .pad-disp { position: absolute; left: 14px; right: 14px; top: 12px; height: 40px; line-height: 38px; padding: 0 10px; text-align: right; font-size: 22px; font-weight: 700; background: #FFF; border: 1px solid var(--line); border-radius: 6px; font-variant-numeric: tabular-nums; }
+  .pad-grid { position: absolute; left: 14px; right: 14px; top: 62px; bottom: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  .key { background: #FFF; border: 1px solid var(--line); border-radius: 6px; font-size: 18px; font-weight: 700; }
+  .key.fn { font-size: 12px; color: var(--accent); }
+  .cal { position: absolute; left: 50%; top: 50%; width: 130px; height: 150px; margin: -65px 0 0 -65px; }
+  .cal-page { position: absolute; inset: 0; background: #FFF; border: 1px solid var(--line); border-radius: 6px; display: grid; align-content: center; justify-items: center; }
+  .cal-day { font-size: 56px; font-weight: 900; line-height: 1; }
+  .cal-m { font-size: 12px; color: var(--dim); }
+  @keyframes tear { to { transform: translate(30px, -200px) rotate(18deg); opacity: 0; } }
+  .cal-page.torn { animation: tear .4s ease-in forwards; }
+  .meter { position: absolute; left: 50%; top: 30px; bottom: 40px; width: 54px; margin-left: -27px; background: #FFF; border: 1px solid var(--line); }
+  .meter i { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: var(--accent); }
+  .vial { position: absolute; left: 20px; right: 20px; top: 50%; height: 46px; margin-top: -23px; border-radius: 23px; background: #DCE7D6; border: 2px solid #9DB394; }
+  .bubble { position: absolute; top: 50%; width: 40px; height: 26px; margin: -13px 0 0 -20px; border-radius: 50%; background: #FFF; }
 
-  /* ---------- 共通オーバーレイ（指示・判定） ---------- */
-  #overlay {
-    position: absolute; inset: 0;
+  /* ---- CAPTCHA ---- */
+  .cap-head { background: var(--accent); color: #FFF; padding: 12px 14px; border-radius: 8px 8px 0 0; font-size: 14px; font-weight: 700; }
+  .cap-grid { display: grid; gap: 3px; padding: 3px; background: var(--line); border: 1px solid var(--line); border-top: 0; border-radius: 0 0 8px 8px; }
+  .tile { position: relative; aspect-ratio: 1; background: #F1F3F7; display: grid; place-items: center; font-size: 22px; overflow: hidden; }
+  .tile .mark { position: relative; pointer-events: none; }
+  .tile.sel { outline: 4px solid var(--accent); outline-offset: -4px; }
+  .tile.sel::after { content: "✓"; position: absolute; left: 3px; top: 0; font-size: 13px; color: var(--accent); font-weight: 900; }
+
+  /* ---- 規約 ---- */
+  .terms {
+    height: 190px;
+    overflow-y: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+    background: #FBFCFD;
+    touch-action: pan-y;
+  }
+  .terms p { font-size: 12px; line-height: 1.9; color: #374151; }
+
+  /* ---- 確認ダイアログ ---- */
+  #dialog {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, .55);
     display: none;
     align-items: center;
     justify-content: center;
-    text-align: center;
-    padding: 24px;
-    z-index: 10;
-    background: rgba(28,25,20,.93);
+    padding: 22px;
+    z-index: 60;
   }
-  #overlay.on { display: flex; }
-  #overlay .big {
-    font-size: clamp(28px, 9vw, 42px);
-    font-weight: 900;
-    line-height: 1.3;
-    text-wrap: balance;
-  }
-  #overlay .big b { color: var(--amber); font-size: 1.4em; white-space: nowrap; }
-  #overlay .sub {
-    font-size: 14px;
-    letter-spacing: .06em;
-    color: var(--dim);
-    margin-top: 14px;
-  }
-  .ok   { color: var(--green); }
-  .bad  { color: var(--red); }
+  #dialog.on { display: flex; }
+  .dbox { background: #FFF; border-radius: 12px; padding: 18px; width: 100%; max-width: 320px; }
+  .dbox p { font-size: 15px; font-weight: 700; line-height: 1.7; }
+  .dbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .dbtns button { padding: 11px; border-radius: 8px; font-size: 14px; font-weight: 700; }
+  .dbtns .yes { background: var(--accent); color: #FFF; }
+  .dbtns .no  { background: #E8EBF1; color: var(--ink); }
 
-  @keyframes pop { from { transform: scale(.82); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  #overlay .inner { animation: pop .18s ease-out both; }
-
-  /* ---------- 結果 ---------- */
-  #over { justify-content: center; gap: 26px; padding: 32px 24px; text-align: center; }
-  #over h2 { font-size: 30px; font-weight: 900; margin: 0; }
-  .score {
-    font-family: var(--panelface);
-    font-size: 84px;
-    font-weight: 700;
-    line-height: .85;
-    color: var(--amber);
-    font-variant-numeric: tabular-nums;
-  }
-  .score-label {
-    font-size: 13px;
-    letter-spacing: .1em;
-    color: var(--dim);
-    margin-top: 10px;
-  }
-
-  /* ---------- 各コントローラ共通 ---------- */
-  .hintline {
-    position: absolute;
-    left: 12px; right: 12px; top: 26px;
-    text-align: center;
-    font-size: 12.5px;
-    color: var(--dim);
-    pointer-events: none;
-  }
-  .ground-line {
-    position: absolute;
-    left: 0; right: 0; bottom: 40px;
-    border-bottom: 1px dashed var(--line);
-  }
-  .scale-marks {
-    position: absolute;
-    left: 0; right: 0; bottom: 12px;
-    height: 24px;
-    font-family: var(--panelface);
-    font-size: 11px;
-    color: var(--dim);
-    font-variant-numeric: tabular-nums;
-    pointer-events: none;
-  }
-  .scale-marks span {
-    position: absolute;
-    transform: translateX(-50%);
-    top: 6px;
-    white-space: nowrap;
-  }
-  .scale-marks span:first-child { transform: none; left: 4px !important; }
-  .scale-marks span:last-child  { transform: translateX(-100%); left: calc(100% - 4px) !important; }
-  .round-btn {
-    position: absolute;
-    left: 50%;
-    width: 132px; height: 132px;
-    margin-left: -66px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 50% 34%, #6A6151, #3A342B);
-    border: 2px solid #7C7261;
-    display: grid;
-    place-items: center;
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--ink);
-    box-shadow: 0 7px 0 #241F19;
-  }
-  .round-btn.down { transform: translateY(6px); box-shadow: 0 1px 0 #241F19; }
-
-  /* ランチャー */
-  #cannon {
-    position: absolute;
-    bottom: 40px;
-    left: 8%;
-    width: 46px; height: 46px;
-    margin-left: -23px;
-    display: grid;
-    place-items: center;
-    font-size: 30px;
-    transform-origin: 50% 78%;
-    line-height: 1;
-  }
-  .bullet {
-    position: absolute;
-    width: 12px; height: 12px;
-    margin-left: -6px;
-    border-radius: 50%;
-    background: var(--amber);
-    box-shadow: 0 0 10px rgba(232,163,61,.75);
-  }
-  .splat {
-    position: absolute;
-    bottom: 34px;
-    width: 3px; height: 13px;
-    margin-left: -1.5px;
-    background: var(--red);
-  }
-  .charge-bar {
-    position: absolute;
-    left: 14px; right: 14px; top: 10px;
-    height: 6px;
-    background: var(--deep);
-    border: 1px solid var(--line);
-  }
-  .charge-bar i {
-    display: block;
-    height: 100%;
-    width: 0;
-    background: var(--red);
-  }
-
-  /* 物理スライダー */
-  .slider-track {
-    position: absolute;
-    left: 24px; right: 24px;
-    top: 50%;
-    height: 8px;
-    margin-top: -4px;
-    background: var(--deep);
-    border: 1px solid var(--line);
-  }
-  .knob {
-    position: absolute;
-    top: 50%;
-    width: 42px; height: 42px;
-    margin: -21px 0 0 -21px;
-    border-radius: 50%;
-    background: linear-gradient(180deg, #6A6151, #423C32);
-    border: 1px solid #7C7261;
-    box-shadow: 0 4px 10px rgba(0,0,0,.45);
-  }
-
-  .leak {
-    position: absolute;
-    left: 0; right: 0; bottom: 14px;
-    text-align: center;
-    font-family: var(--panelface);
-    font-size: 12px;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    color: var(--red);
-  }
-
-  /* ルーレット */
-  .wheel {
-    position: absolute;
-    left: 50%; top: 54%;
-    border-radius: 50%;
-    border: 3px solid #7C7261;
-    background: repeating-conic-gradient(from -15deg, #3A342B 0 30deg, #2B2721 30deg 60deg);
-    box-shadow: 0 6px 18px rgba(0,0,0,.5);
-  }
-  .wheel-label {
-    position: absolute;
-    left: 50%; top: 50%;
-    font-family: var(--panelface);
-    font-weight: 700;
-    font-size: 15px;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    color: var(--ink);
-  }
-  .wheel-hub {
-    position: absolute;
-    left: 50%; top: 50%;
-    width: 18px; height: 18px;
-    margin: -9px 0 0 -9px;
-    border-radius: 50%;
-    background: var(--amber);
-  }
-  .wheel-pointer {
-    position: absolute;
-    left: 50%;
-    width: 0; height: 0;
-    margin-left: -10px;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-top: 18px solid var(--amber);
-    z-index: 2;
-  }
-
-  /* 押すたびランダム */
-  .rand-count {
-    position: absolute;
-    left: 0; right: 0; bottom: 14px;
-    text-align: center;
-    font-size: 12px;
-    color: var(--dim);
-  }
-
-  /* 全部ラジオボタン */
-  .opt-list {
-    position: absolute; inset: 0;
-    overflow-y: auto;
-    padding: 6px 10px 10px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-    align-content: start;
-    gap: 0 6px;
-  }
-  .opt-list label {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 11px;
-    font-variant-numeric: tabular-nums;
-    padding: 5px 0;
-    color: var(--dim);
-    white-space: nowrap;
-  }
-  .opt-list input { margin: 0; width: 12px; height: 12px; accent-color: var(--amber); }
-  .opt-list input:checked + span { color: var(--ink); font-weight: 700; }
-
-  /* カーリング */
-  .sheet {
-    position: absolute;
-    left: 22%; right: 22%; top: 18px; bottom: 18px;
-    background: linear-gradient(180deg, #3A4247, #2E3438);
-    border-left: 1px solid #56626A;
-    border-right: 1px solid #56626A;
-  }
-  .sheet-line {
-    position: absolute;
-    left: 0; right: 0;
-    border-top: 2px solid rgba(196,68,46,.8);
-  }
-  .sheet-line.back { border-top-color: var(--red); }
-  .stone {
-    position: absolute;
-    width: 34px; height: 34px;
-    margin: -17px 0 0 -17px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 50% 38%, #B7AE9C, #6A6151);
-    border: 3px solid var(--red);
-    box-shadow: 0 3px 6px rgba(0,0,0,.5);
-  }
-  .curl-scale {
-    position: absolute;
-    left: 6px;
-    font-family: var(--panelface);
-    font-size: 11px;
-    color: var(--dim);
-    transform: translateY(-50%);
-    white-space: nowrap;
-  }
-  .curl-out {
-    position: absolute;
-    left: 0; right: 0; top: 50%;
-    text-align: center;
-    font-size: 22px;
-    font-weight: 900;
-    color: var(--red);
-  }
-
-  /* 16連サイコロ */
-  .dice-grid {
-    position: absolute;
-    left: 50%; top: 52px;
-    transform: translateX(-50%);
-    display: grid;
-    grid-template-columns: repeat(4, 44px);
-    gap: 8px;
-  }
-  .die {
-    width: 44px; height: 44px;
-    padding: 6px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    gap: 2px;
-    background: var(--ink);
-    border-radius: 7px;
-    border: 2px solid transparent;
-  }
-  .die.held { border-color: var(--amber); box-shadow: 0 0 0 2px var(--amber); }
-  .die i { border-radius: 50%; background: transparent; }
-  .die i.on { background: var(--ground); }
-  .dice-foot {
-    position: absolute;
-    left: 16px; right: 16px; bottom: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .dice-sum { font-size: 12.5px; color: var(--dim); }
-  .roll-btn {
-    font-weight: 700;
-    font-size: 15px;
-    padding: 9px 22px;
-    background: var(--amber);
-    color: var(--ground);
-    box-shadow: 0 3px 0 #A9742A;
-  }
-  .roll-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #A9742A; }
-
-  /* 円周率スクロール */
-  .pi-strip {
-    position: absolute;
-    left: 0; right: 0;
-    top: 50%;
-    height: 76px;
-    margin-top: -38px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    white-space: nowrap;
-    background: var(--deep);
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-    scrollbar-width: none;
-  }
-  .pi-strip::-webkit-scrollbar { display: none; }
-  .pi-digits {
-    display: inline-block;
-    font-family: var(--panelface);
-    font-weight: 600;
-    font-size: 34px;
-    line-height: 76px;
-    font-variant-numeric: tabular-nums;
-    color: var(--dim);
-  }
-  .pi-digits span { display: inline-block; width: 30px; text-align: center; }
-  .pi-window {
-    position: absolute;
-    left: 50%; top: 50%;
-    width: 64px; height: 88px;
-    margin: -44px 0 0 -32px;
-    border: 2px solid var(--amber);
-    pointer-events: none;
-  }
-  .pi-pos {
-    position: absolute;
-    left: 0; right: 0; bottom: 18px;
-    text-align: center;
-    font-size: 12px;
-    color: var(--dim);
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* 日めくり */
-  .cal {
-    position: absolute;
-    left: 50%; top: 56%;
-    width: 170px; height: 196px;
-    margin: -98px 0 0 -85px;
-  }
-  .cal-page, .cal-back {
-    position: absolute; inset: 0;
-    background: #F2ECDD;
-    color: #2A2620;
-    border-radius: 4px;
-    display: grid;
-    align-content: center;
-    justify-items: center;
-    gap: 2px;
-    box-shadow: 0 5px 12px rgba(0,0,0,.4);
-  }
-  .cal-back { transform: translate(4px, 5px); background: #D9D2C1; }
-  .cal-page::before {
-    content: "";
-    position: absolute;
-    left: 0; right: 0; top: 0;
-    height: 16px;
-    background: var(--red);
-    border-radius: 4px 4px 0 0;
-  }
-  .cal-month { font-size: 14px; font-weight: 700; margin-top: 10px; }
-  .cal-day {
-    font-family: var(--panelface);
-    font-size: 86px;
-    font-weight: 700;
-    line-height: .9;
-    font-variant-numeric: tabular-nums;
-  }
-  .cal-wd { font-size: 13px; }
-  .cal-page.sun .cal-day, .cal-page.sun .cal-wd { color: var(--red); }
-  @keyframes tear {
-    to { transform: translate(40px, -260px) rotate(24deg); opacity: 0; }
-  }
-  .cal-page.torn { animation: tear .45s ease-in forwards; pointer-events: none; }
-
-  /* シャッフル・テンキー */
-  .pad-display {
-    position: absolute;
-    left: 18px; right: 18px; top: 50px;
-    height: 48px;
-    padding: 0 12px;
-    background: var(--deep);
-    border: 1px solid var(--line);
-    font-family: var(--panelface);
-    font-size: 32px;
-    font-weight: 700;
-    line-height: 46px;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }
-  .pad-grid {
-    position: absolute;
-    left: 18px; right: 18px; top: 110px; bottom: 14px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-auto-rows: 1fr;
-    gap: 6px;
-  }
-  .key {
-    background: linear-gradient(180deg, #4A4439, #38332B);
-    border: 1px solid #5C5446;
-    font-family: var(--panelface);
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--ink);
-  }
-  .key.fn { font-family: var(--jp); font-size: 14px; color: var(--amber); }
-  .key:active { background: #2A261F; }
-
-  /* 叫ぶ */
-  .shout-meter {
-    position: absolute;
-    left: 50%; top: 60px; bottom: 50px;
-    width: 64px;
-    margin-left: -32px;
-    background: var(--deep);
-    border: 1px solid var(--line);
-  }
-  .shout-meter i {
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 0;
-    background: linear-gradient(0deg, var(--green), var(--amber) 70%, var(--red));
-  }
-  .shout-word {
-    position: absolute;
-    left: 0; right: 0; bottom: 14px;
-    text-align: center;
-    font-size: 20px;
-    font-weight: 900;
-    color: var(--blue);
-  }
-
-  /* 水準器 */
-  .vial {
-    position: absolute;
-    left: 24px; right: 24px; top: 50%;
-    height: 54px;
-    margin-top: -27px;
-    border-radius: 27px;
-    background: linear-gradient(180deg, #B9C98A, #8FA160);
-    border: 2px solid #5C6A3A;
-    box-shadow: inset 0 3px 8px rgba(0,0,0,.35);
-  }
-  .bubble {
-    position: absolute;
-    top: 50%;
-    width: 46px; height: 30px;
-    margin: -15px 0 0 -23px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 40% 35%, #FFFFF0, #E4EAC6);
-    opacity: .9;
-  }
+  /* ---- 完了 ---- */
+  #done { text-align: center; padding: 40px 8px; }
+  #done .time { font-size: 52px; font-weight: 900; font-variant-numeric: tabular-nums; margin: 10px 0 4px; }
+  #done .lbl { font-size: 12px; color: var(--dim); }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before { animation-duration: .001s !important; transition-duration: .001s !important; }
@@ -833,90 +293,15 @@
 </head>
 <body>
 <div id="app">
-
-  <section class="screen on" id="title">
-    <div class="title-head">
-      <p class="eyebrow">Bad UI Battles</p>
-      <h1><span class="nb">ワースト・</span><span class="nb"><em>ボリューム</em>選手権</span></h1>
-    </div>
-
-    <p class="lede">
-      お題は「指定の値に合わせろ」だけ。<br>
-      毎回変わるのは、その入力欄のほうです。
-      1本8秒、鳴り終わった瞬間の値で判定します。
-    </p>
-
-    <div id="onlyNote" hidden></div>
-
-    <div>
-      <div class="section-label">お題</div>
-      <div class="topic-grid" id="topicGrid"></div>
-    </div>
-
-    <div>
-      <div class="section-label" id="rosterLabel">入力欄</div>
-      <div class="roster" id="roster"></div>
-    </div>
-
-    <div class="optin">
-      <button class="optin-btn" id="optinBtn" type="button" aria-pressed="false">
-        マイクと傾きセンサーも使う（「叫ぶ」「水準器」が出題に加わります）
-      </button>
-      <div id="capStatus">使うときはこのボタンを押して、ブラウザの確認で許可してください。</div>
-    </div>
-
-    <p class="credit">
-      2017年に Reddit で生まれた「世界最悪の音量調整UI」の系譜です。
-      ランチャー・ルーレット・押すたびランダム・全部ラジオボタンは
-      <a href="https://github.com/ZeyuKeithFu/WorstVolumeControl" target="_blank" rel="noopener">ZeyuKeithFu/WorstVolumeControl</a> の作例が元です。<br>
-      使いにくさで人を困らせて得をする「ダークパターン」とは別物で、誰も損をしないから笑えるジャンルです。
-    </p>
-
-    <div class="start-dock"><button class="btn" id="startBtn">はじめる</button></div>
-  </section>
-
-  <section class="screen" id="play">
-    <div class="topbar">
-      <div class="readout">
-        <div>
-          <div class="label">目標</div>
-          <div class="num" id="targetNum">70</div>
-        </div>
-        <div>
-          <div class="label">現在</div>
-          <div class="num" id="volNum">0</div>
-        </div>
-        <div class="tol" id="tolText">±5</div>
-      </div>
-      <div class="lives" id="lives"></div>
-    </div>
-
-    <div class="meter">
-      <div class="meter-ticks"></div>
-      <div id="zone"></div>
-      <div id="needle"></div>
-    </div>
-
-    <div class="timer"><div id="timerFill"></div></div>
-
-    <div class="ctrl-name" id="ctrlName"></div>
-    <div id="stage"></div>
-  </section>
-
-  <section class="screen" id="over">
-    <div>
-      <h2 id="overTitle">おわり</h2>
-    </div>
-    <div>
-      <div class="score" id="scoreNum">0</div>
-      <div class="score-label">合わせられた回数</div>
-    </div>
-    <p class="lede" id="overNote"></p>
-    <button class="btn" id="againBtn">もう一度</button>
-  </section>
-
-  <div id="overlay"><div class="inner" id="overlayInner"></div></div>
+  <div id="bar"><div id="fill"></div></div>
+  <header class="head">
+    <div class="step-no" id="stepNo"></div>
+    <h1 id="stepTitle"></h1>
+  </header>
+  <main id="stage"></main>
 </div>
+<div id="toast"></div>
+<div id="dialog"><div class="dbox" id="dialogBox"></div></div>
 
 <script>
 (() => {
@@ -924,659 +309,232 @@
 
   const $ = (id) => document.getElementById(id);
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const el = (html) => { const d = document.createElement("div"); d.innerHTML = html.trim(); return d.firstElementChild; };
 
-  /* ============ 効果音（Web Audio で合成。音源ファイルは持たない） ============ */
-  let ac = null;
-  function audio() {
-    if (!ac) {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (Ctx) ac = new Ctx();
-    }
-    if (ac && ac.state === "suspended") ac.resume();
-    return ac;
-  }
-  function tone(freq, dur, type = "square", vol = .16, slideTo = null) {
-    const c = audio();
-    if (!c) return;
-    const o = c.createOscillator(), g = c.createGain();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, c.currentTime);
-    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, c.currentTime + dur);
-    g.gain.setValueAtTime(vol, c.currentTime);
-    g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + dur);
-    o.connect(g).connect(c.destination);
-    o.start();
-    o.stop(c.currentTime + dur + .02);
-  }
-  function noise(dur = .12, vol = .12) {
-    const c = audio();
-    if (!c) return;
-    const n = Math.floor(c.sampleRate * dur);
-    const buf = c.createBuffer(1, n, c.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
-    const src = c.createBufferSource(), g = c.createGain();
-    src.buffer = buf;
-    g.gain.value = vol;
-    src.connect(g).connect(c.destination);
-    src.start();
-  }
-  const sfx = {
-    launch:   () => { noise(.16, .16); tone(180, .18, "sawtooth", .1, 90); },
-    impact:   () => tone(120, .16, "square", .14, 55),
-    pump:     () => tone(420, .07, "square", .1, 260),
-    grab:     () => tone(300, .05, "triangle", .08),
-    click:    () => tone(900, .025, "square", .06),
-    paper:    () => noise(.09, .1),
-    clear:    () => { tone(660, .1, "square", .15); setTimeout(() => tone(990, .18, "square", .15), 95); },
-    fail:     () => { tone(200, .14, "sawtooth", .14); setTimeout(() => tone(120, .26, "sawtooth", .14), 130); },
-    tick:     () => tone(1200, .04, "square", .07),
-    gameover: () => {
-      [440, 350, 262, 180].forEach((f, i) => setTimeout(() => tone(f, .3, "sawtooth", .14), i * 160));
-    }
-  };
+  const params = new URLSearchParams(location.search);
+  const ONLY = params.get("only");
+  const CTRL = params.get("ctrl");
 
-  /* ============ お題 ============
-     コントローラは 0〜100 の「位置」しか返さない。お題がそれを自分の単位に変換する。
-     同じランチャーでも、お題が変われば「着弾点が音量」にも「着弾点が予約日」にもなる。 */
-
-  const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
-
-  const TOPICS = [
-    {
-      id: "volume", name: "音量",
-      min: 0, max: 100, step: 1, targetStep: 5, listStep: 1,
-      format: (v) => String(v),
-      prompt: (t) => "音量を <b>" + t + "</b> にしろ！",
-      tolLabel: (d) => "±" + d
-    },
-    {
-      id: "date", name: "予約日",
-      min: 1, max: 31, step: 1, targetStep: 1, listStep: 1,
-      format: (v) => "10/" + v,
-      prompt: (t) => "予約日を <b>10/" + t + "</b> にしろ！",
-      tolLabel: (d) => "±" + d + "日"
-    },
-    {
-      id: "money", name: "支払い",
-      min: 0, max: 9999, step: 1, targetStep: 10, listStep: 100,
-      format: (v) => "¥" + v.toLocaleString("ja-JP"),
-      prompt: (t) => "<b>¥" + t.toLocaleString("ja-JP") + "</b> を払え！",
-      tolLabel: (d) => "±¥" + d.toLocaleString("ja-JP")
-    },
-    {
-      id: "star", name: "評価",
-      min: 0, max: 5, step: .5, targetStep: .5, listStep: .5,
-      format: (v) => "★" + v.toFixed(1),
-      prompt: (t) => "<b>★" + t.toFixed(1) + "</b> をつけろ！",
-      tolLabel: (d) => d > 0 ? "±★" + d.toFixed(1) : "ぴったり"
-    }
-  ];
-
-  /** お題の刻みに丸める（0.5 刻みの浮動小数誤差も落とす） */
-  function snap(topic, v, step = topic.step) {
-    const k = Math.round((v - topic.min) / step);
-    return clamp(Math.round((topic.min + k * step) * 1000) / 1000, topic.min, topic.max);
-  }
-  const fromPct = (topic, pct) => snap(topic, topic.min + clamp(pct, 0, 100) / 100 * (topic.max - topic.min));
-  const toPct = (topic, v) => (v - topic.min) / (topic.max - topic.min) * 100;
-
-  /* ============ センサー（オプトイン） ============ */
-  const CAP = { mic: false, tilt: false, analyser: null, gamma: 0 };
-
-  /* ============ コントローラ定義 ============
-     各コントローラは 0〜100 の位置を onChange で報告するだけ。目標との判定・タイマー・
-     ライフ・画面遷移はいっさい知らない。mount は後始末の関数を返す。
-     topics を書くとそのお題でだけ出題される。needs を書くとセンサーを許可した人にだけ出題される。 */
-
-  /** 0/25/50/75/100% の位置に、お題の単位で目盛りを振る */
-  function addScale(root, topic, place) {
-    const marks = document.createElement("div");
-    marks.className = "scale-marks";
-    if (place) Object.assign(marks.style, place);
-    [0, 25, 50, 75, 100].forEach((p) => {
-      const s = document.createElement("span");
-      s.textContent = topic.format(snap(topic, topic.min + p / 100 * (topic.max - topic.min), topic.targetStep));
-      s.style.left = p + "%";
-      marks.appendChild(s);
-    });
-    root.appendChild(marks);
-  }
-
-  /** requestAnimationFrame のループ。dt（秒）を渡し、止める関数を返す */
-  function loop(fn, maxDt = .05) {
-    let last = performance.now(), raf = 0;
-    const frame = (now) => {
-      fn(Math.min(maxDt, (now - last) / 1000), now);
-      last = now;
-      raf = requestAnimationFrame(frame);
-    };
-    raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
+  let toastTimer = 0;
+  function toast(msg, ms = 2200) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("on"), ms);
   }
 
   /** イベント登録をまとめ、後始末で一括解除する */
   function listeners() {
     const list = [];
     return {
-      on(el, type, fn, opt) { el.addEventListener(type, fn, opt); list.push([el, type, fn, opt]); },
-      off() { list.forEach(([el, type, fn, opt]) => el.removeEventListener(type, fn, opt)); }
+      on(t, type, fn, opt) { t.addEventListener(type, fn, opt); list.push([t, type, fn, opt]); },
+      off() { list.forEach(([t, type, fn, opt]) => t.removeEventListener(type, fn, opt)); }
     };
   }
+  /** requestAnimationFrame のループ。dt（秒）を渡し、止める関数を返す */
+  function loop(fn, maxDt = .05) {
+    let last = performance.now(), raf = 0;
+    const frame = (now) => { fn(Math.min(maxDt, (now - last) / 1000)); last = now; raf = requestAnimationFrame(frame); };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }
 
-  const CONTROLLERS = [
-    {
-      id: "launcher",
-      name: "ランチャー",
-      pain: "randomness",
-      /* 原典 (ZeyuKeithFu/WorstVolumeControl の VolumeLauncher) は仰角だけが伸びるが、
-         それだと出せる値の下限が高くなりすぎるので、仰角と初速をいっしょに上げている。 */
-      mount(root, { topic, onChange }) {
-        root.innerHTML =
-          '<div class="hintline">押し続けて角度をつけ、離して撃つ。落ちた場所が値。</div>' +
-          '<div class="charge-bar"><i></i></div>' +
-          '<div class="ground-line"></div>' +
-          '<div id="cannon">🔊</div>';
-        addScale(root, topic);
+  /* ============ 値を合わせる入力欄 ============
+     以前のミニゲームから、乱数で結果が決まるもの（ランチャー・ルーレット・
+     押すたびランダム・16連サイコロ）を外して移植した。
+     入力欄は 0〜100 の位置を onChange で返すだけ。判定は呼び出し側が行う。 */
 
-        const cannon = $("cannon"), chg = root.querySelector(".charge-bar i");
-        const ev = listeners();
-        let charging = false, c = 0;
-        let flying = false, bx = 0, by = 0, vx = 0, vy = 0, el = null;
+  const TASKS = {
+    volume: { min: 0, max: 100, tol: 3, format: (v) => String(Math.round(v)) },
+    money:  { min: 0, max: 9999, tol: 150, format: (v) => "¥" + Math.round(v).toLocaleString("ja-JP") },
+    date:   { min: 1, max: 31, tol: 1, format: (v) => "10月" + Math.round(v) + "日" }
+  };
+  const fromPct = (t, p) => clamp(t.min + p / 100 * (t.max - t.min), t.min, t.max);
+  const toPct = (t, v) => (v - t.min) / (t.max - t.min) * 100;
 
-        const G = 400;          // 正規化単位/秒^2（横幅 100 単位のスケール）
-        const START_X = 8, START_Y = 6.7;
+  function addScale(root, task) {
+    const s = el('<div class="scale"></div>');
+    [0, 25, 50, 75, 100].forEach((p) => {
+      const x = document.createElement("span");
+      x.textContent = task.format(fromPct(task, p));
+      x.style.left = p + "%";
+      s.appendChild(x);
+    });
+    root.appendChild(s);
+  }
 
-        ev.on(root, "pointerdown", (e) => {
-          e.preventDefault();
-          if (flying) return;   // 飛翔中は撃てない
-          charging = true; c = 0;
-          sfx.grab();
-        });
-        const release = () => {
-          if (!charging) return;
-          charging = false;
-          const angle = (15 + 45 * c) * Math.PI / 180;
-          const v0 = 87 + 126 * c;
-          bx = START_X; by = START_Y;
-          vx = v0 * Math.cos(angle);
-          vy = v0 * Math.sin(angle);
-          el = document.createElement("div");
-          el.className = "bullet";
-          root.appendChild(el);
-          flying = true;
-          chg.style.width = "0%";
-          sfx.launch();
-        };
-        ev.on(window, "pointerup", release);
-        ev.on(window, "pointercancel", release);
-
-        const stop = loop((dt) => {
-          if (charging) {
-            c = Math.min(1, c + dt);
-            chg.style.width = (c * 100) + "%";
-            cannon.style.transform = "rotate(" + (-(15 + 45 * c)) + "deg)";
-          }
-          if (flying) {
-            vy -= G * dt;
-            bx += vx * dt;
-            by += vy * dt;
-            if (by <= 0) {
-              // 着弾。x 座標がそのまま値になる
-              const x = clamp(bx, 0, 100);
-              onChange(x);
-              el.remove(); el = null; flying = false;
-              const mark = document.createElement("div");
-              mark.className = "splat";
-              mark.style.left = x + "%";
-              root.appendChild(mark);
-              cannon.style.transform = "rotate(0deg)";
-              sfx.impact();
-            } else {
-              el.style.left = bx + "%";
-              el.style.bottom = (40 + by * root.clientWidth / 100) + "px";
-            }
-          }
-        });
-
-        return () => { stop(); ev.off(); };
-      }
-    },
-
-    {
-      id: "physics-slider",
-      name: "物理スライダー",
-      pain: "precision",
-      /* つまみが中央に引かれるバネと弱い減衰を持つ。離すと振り子のように揺れ続け、
-         狙った値ではまず止まらない。 */
-      mount(root, { topic, onChange }) {
-        root.innerHTML =
-          '<div class="hintline">つまみを離すと揺れます。止まるまで待つ余裕はありません。</div>' +
-          '<div class="slider-track"></div>' +
-          '<div class="knob" id="knob"></div>';
-        addScale(root, topic, { top: "calc(50% + 22px)", bottom: "auto" });
-
-        const knob = $("knob");
-        const ev = listeners();
-        let x = 50, v = 0, dragging = false;
-        let lastX = 50, lastT = performance.now();
-        const K = 7, DAMP = .4;
-
-        const pos = (e) => {
-          const r = root.getBoundingClientRect();
-          return clamp((e.clientX - r.left) / r.width * 100, 0, 100);
-        };
-        // つまみのタッチも操作面へバブルするので、登録は操作面の1か所だけにする
-        ev.on(root, "pointerdown", (e) => {
-          e.preventDefault();
-          dragging = true; v = 0;
-          lastX = x = pos(e); lastT = performance.now();
-          sfx.grab();
-        });
+  const CONTROLLERS = {
+    "physics-slider": {
+      name: "物理スライダー", task: "volume",
+      /* つまみが中央に引かれるバネと弱い減衰。離すと揺れ続けて狙った値で止まらない */
+      mount(root, { task, onChange }) {
+        root.innerHTML = '<div class="hint">つまみを離すと揺れます</div><div class="track"></div><div class="knob" id="knob"></div>';
+        addScale(root, task);
+        const knob = $("knob"), ev = listeners();
+        let x = 50, v = 0, drag = false, lastX = 50, lastT = performance.now();
+        const K = 7, D = .4;
+        const pos = (e) => { const r = root.getBoundingClientRect(); return clamp((e.clientX - r.left) / r.width * 100, 0, 100); };
+        ev.on(root, "pointerdown", (e) => { e.preventDefault(); drag = true; v = 0; lastX = x = pos(e); lastT = performance.now(); });
         ev.on(window, "pointermove", (e) => {
-          if (!dragging) return;
-          const now = performance.now();
-          const nx = pos(e);
+          if (!drag) return;
+          const now = performance.now(), nx = pos(e);
           v = (nx - lastX) / Math.max(.008, (now - lastT) / 1000);
           x = nx; lastX = nx; lastT = now;
         });
-        const up = () => { dragging = false; };
-        ev.on(window, "pointerup", up);
-        ev.on(window, "pointercancel", up);
-
+        const up = () => { drag = false; };
+        ev.on(window, "pointerup", up); ev.on(window, "pointercancel", up);
         const stop = loop((dt) => {
-          if (!dragging) {
-            v += (-K * (x - 50) - DAMP * v) * dt;
+          if (!drag) {
+            v += (-K * (x - 50) - D * v) * dt;
             x += v * dt;
-            if (x < 0)   { x = 0;   v = -v * .7; }
+            if (x < 0) { x = 0; v = -v * .7; }
             if (x > 100) { x = 100; v = -v * .7; }
           }
           knob.style.left = x + "%";
           onChange(x);
         }, .032);
-
         return () => { stop(); ev.off(); };
       }
     },
 
-    {
-      id: "pump",
-      name: "空気入れ",
-      pain: "effort",
-      /* 押すと上がるが、常に抜け続ける。手を止めた瞬間から下がるので、
-         目標値をタイムアップまで保つには一定のペースで押し続けるしかない。 */
+    pump: {
+      name: "空気入れ", task: "volume",
+      /* 押すと上がるが常に抜けていく。押し続けないと保てない */
       mount(root, { onChange }) {
-        root.innerHTML =
-          '<div class="hintline">押すと入りますが、ずっと抜けています。</div>' +
-          '<button class="round-btn" style="bottom:46px" id="pump" type="button">押す</button>' +
-          '<div class="leak">Leaking…</div>';
-
-        const pump = $("pump");
-        const ev = listeners();
+        root.innerHTML = '<div class="hint">押すと入りますが、ずっと抜けています</div>' +
+          '<button class="round" id="pump" type="button">押す</button><div class="leak">Leaking…</div>';
+        const pump = $("pump"), ev = listeners();
         let x = 0;
-        const GAIN = 9, LEAK = 14;
-
-        ev.on(pump, "pointerdown", (e) => {
-          e.preventDefault();
-          x = clamp(x + GAIN, 0, 100);
-          pump.classList.add("down");
-          sfx.pump();
-        });
+        ev.on(pump, "pointerdown", (e) => { e.preventDefault(); x = clamp(x + 9, 0, 100); pump.classList.add("down"); });
         const up = () => pump.classList.remove("down");
-        ev.on(window, "pointerup", up);
-        ev.on(window, "pointercancel", up);
-
-        const stop = loop((dt) => {
-          x = clamp(x - LEAK * dt, 0, 100);
-          onChange(x);
-        });
-
+        ev.on(window, "pointerup", up); ev.on(window, "pointercancel", up);
+        const stop = loop((dt) => { x = clamp(x - 14 * dt, 0, 100); onChange(x); });
         return () => { stop(); ev.off(); };
       }
     },
 
-    {
-      id: "roulette",
-      name: "ルーレット",
-      pain: "randomness",
-      /* 原典の SpinnerWheel と同じく、マスの数字はでたらめに並べる。
-         目標値のマスは必ず1つだけ混ぜる（入っていないと絶対に合わないため）。 */
-      mount(root, { topic, target, onChange }) {
-        const N = 12;
-        const values = Array.from({ length: N }, () =>
-          snap(topic, topic.min + Math.random() * (topic.max - topic.min), topic.targetStep));
-        values[Math.floor(Math.random() * N)] = target;
-
-        const size = Math.min(root.clientWidth - 40, root.clientHeight - 70);
-        const r = size / 2;
-        root.innerHTML = '<div class="hintline">タップで回す。止まったマスが値。</div>';
-        const wheel = document.createElement("div");
-        wheel.className = "wheel";
-        Object.assign(wheel.style, { width: size + "px", height: size + "px", margin: (-r) + "px 0 0 " + (-r) + "px" });
-        values.forEach((v, i) => {
-          const s = document.createElement("span");
-          s.className = "wheel-label";
-          s.textContent = topic.format(v);
-          s.style.transform = "translate(-50%, -50%) rotate(" + (i * 30) + "deg) translateY(" + (-r * .72) + "px)";
-          wheel.appendChild(s);
-        });
-        const hub = document.createElement("div");
-        hub.className = "wheel-hub";
-        wheel.appendChild(hub);
-        root.appendChild(wheel);
-        const pointer = document.createElement("div");
-        pointer.className = "wheel-pointer";
-        pointer.style.top = "calc(54% - " + (r + 6) + "px)";
-        root.appendChild(pointer);
-
+    pi: {
+      name: "円周率スクロール", task: "volume",
+      /* 円周率の小数を横に流し、枠に入った2桁が値になる */
+      mount(root, { onChange }) {
+        const digits = piDigits(), W = 26;
+        root.innerHTML = '<div class="hint">枠に入った2桁が値です</div>' +
+          '<div class="pi-strip" id="strip"><div class="pi-digits" id="digits"></div></div><div class="pi-window"></div>';
+        const strip = $("strip"), box = $("digits");
+        box.style.padding = "0 " + (root.clientWidth / 2 - W) + "px";
+        box.innerHTML = digits.split("").map((d) => "<span>" + d + "</span>").join("");
         const ev = listeners();
-        let angle = Math.random() * 360, omega = 0, lastIdx = -1;
-
-        ev.on(root, "pointerdown", (e) => {
-          e.preventDefault();
-          if (omega > 1) return;   // 回っている間は押しても何も起きない
-          omega = 540 + Math.random() * 600;
-          sfx.grab();
-        });
-
-        const stop = loop((dt) => {
-          if (omega > 0) {
-            angle += omega * dt;
-            omega = Math.max(0, omega * Math.exp(-1.1 * dt) - 50 * dt);
-          }
-          wheel.style.transform = "rotate(" + angle + "deg)";
-          // 指針（真上）の下にあるマス
-          const idx = ((Math.round(-angle / 30) % N) + N) % N;
-          if (idx !== lastIdx) { lastIdx = idx; if (omega > 0) sfx.click(); }
-          onChange(toPct(topic, values[idx]));
-        });
-
-        return () => { stop(); ev.off(); };
-      }
-    },
-
-    {
-      id: "random",
-      name: "押すたびランダム",
-      pain: "randomness",
-      /* 原典の RandomNumber。押すたびにでたらめな値になる。狙いようがないので、
-         当たった瞬間に手を止める判断だけが勝負。 */
-      mount(root, { topic, onChange }) {
-        root.innerHTML =
-          '<div class="hintline">押すたびに、でたらめな値になります。</div>' +
-          '<button class="round-btn" style="top:50%;margin-top:-66px" id="randBtn" type="button">押す</button>' +
-          '<div class="rand-count" id="randCount">0 回</div>';
-        const btn = $("randBtn"), count = $("randCount");
-        const ev = listeners();
-        let n = 0;
-        const roll = () => onChange(toPct(topic, snap(topic, topic.min + Math.random() * (topic.max - topic.min))));
-        roll();
-        ev.on(btn, "pointerdown", (e) => {
-          e.preventDefault();
-          roll();
-          n++;
-          count.textContent = n + " 回";
-          btn.classList.add("down");
-          sfx.click();
-        });
-        const up = () => btn.classList.remove("down");
-        ev.on(window, "pointerup", up);
-        ev.on(window, "pointercancel", up);
+        const read = () => {
+          const i = clamp(Math.round(strip.scrollLeft / W), 0, digits.length - 2);
+          onChange(Number(digits[i]) * 10 + Number(digits[i + 1]));
+        };
+        read();
+        ev.on(strip, "scroll", read, { passive: true });
         return () => ev.off();
       }
     },
 
-    {
-      id: "options",
-      name: "全部ラジオボタン",
-      pain: "effort",
-      /* 原典の OptionList。範囲の値を刻みごとに全部並べる。音量なら 101 個。 */
-      mount(root, { topic, onChange }) {
-        root.style.touchAction = "pan-y";   // この入力欄だけは縦スクロールを許す
-        const list = document.createElement("div");
-        list.className = "opt-list";
-        const html = [];
-        const n = Math.round((topic.max - topic.min) / topic.listStep);
-        for (let i = 0; i <= n; i++) {
-          const v = snap(topic, topic.min + i * topic.listStep, topic.listStep);
-          html.push('<label><input type="radio" name="opt" value="' + v + '"><span>' + topic.format(v) + "</span></label>");
-        }
-        list.innerHTML = html.join("");
-        root.innerHTML = "";
-        root.appendChild(list);
-        onChange(0);
-
-        const ev = listeners();
-        ev.on(list, "change", (e) => {
-          onChange(toPct(topic, Number(e.target.value)));
-          sfx.click();
-        });
-        return () => { ev.off(); root.style.touchAction = ""; };
-      }
-    },
-
-    {
-      id: "curling",
-      name: "カーリング",
-      pain: "precision",
-      /* 石を上に払って滑らせる。止まった位置が値。氷の状態が毎回少し違い、
-         奥の線を越えたら場外で 0 に戻る。 */
-      mount(root, { topic, onChange }) {
-        root.innerHTML =
-          '<div class="sheet"><div class="sheet-line back" style="top:14px"></div><div class="sheet-line" style="bottom:64px"></div></div>' +
-          '<div class="hintline" style="top:auto;bottom:4px">石を上に払う。止まった場所が値。</div>' +
-          '<div class="stone" id="stone"></div>';
-        const stone = $("stone");
-        const H = root.clientHeight;
-        const START = H - 50, END = 32;           // 0% と 100% の y 座標
-        [0, 25, 50, 75, 100].forEach((p) => {
-          const s = document.createElement("span");
-          s.className = "curl-scale";
-          s.style.top = (START - (START - END) * p / 100) + "px";
-          s.textContent = topic.format(snap(topic, topic.min + p / 100 * (topic.max - topic.min), topic.targetStep));
-          root.appendChild(s);
-        });
-
-        const ev = listeners();
-        let y = START, vy = 0, sliding = false, held = false, out = false;
-        let hist = [], mu = 900;
+    curling: {
+      name: "カーリング", task: "volume",
+      /* 石を上に払って止まった位置が値。氷の状態は毎回同じ（乱数なし） */
+      mount(root, { onChange }) {
+        root.innerHTML = '<div class="sheet"></div><div class="hint">石を上に払ってください</div><div class="stone" id="stone"></div>';
+        const stone = $("stone"), ev = listeners();
+        const H = root.clientHeight, START = H - 40, END = 30;
+        let y = START, vy = 0, sliding = false, held = false, hist = [];
         const place = () => { stone.style.left = "50%"; stone.style.top = y + "px"; };
-        const report = () => onChange(out ? 0 : clamp((START - y) / (START - END) * 100, 0, 100));
+        const report = () => onChange(clamp((START - y) / (START - END) * 100, 0, 100));
         place(); report();
-
         ev.on(root, "pointerdown", (e) => {
           e.preventDefault();
           if (sliding) return;
-          // 止まっている石に触ると手元に戻す
-          if (y !== START || out) {
-            y = START; out = false;
-            const o = root.querySelector(".curl-out"); if (o) o.remove();
-          }
-          held = true;
-          hist = [{ y: e.clientY, t: performance.now() }];
-          sfx.grab();
+          y = START;
+          held = true; hist = [{ y: e.clientY, t: performance.now() }];
         });
         ev.on(window, "pointermove", (e) => {
           if (!held) return;
           hist.push({ y: e.clientY, t: performance.now() });
           if (hist.length > 8) hist.shift();
-          // 手元の投球エリア（60px）の中でだけ石が指についてくる
-          const dy = hist[0].y - e.clientY;
-          y = START - clamp(dy, 0, 60);
+          y = START - clamp(hist[0].y - e.clientY, 0, 60);
           place();
         });
         const release = () => {
           if (!held) return;
           held = false;
           const a = hist[0], b = hist[hist.length - 1];
-          const dt = Math.max(16, b.t - a.t) / 1000;
-          vy = Math.max(0, (a.y - b.y) / dt);     // 上向きの速さ px/s
-          mu = 900 * (.85 + Math.random() * .3);  // 氷の状態
+          vy = Math.max(0, (a.y - b.y) / (Math.max(16, b.t - a.t) / 1000));
           sliding = vy > 30;
-          if (sliding) sfx.launch();
         };
-        ev.on(window, "pointerup", release);
-        ev.on(window, "pointercancel", release);
-
+        ev.on(window, "pointerup", release); ev.on(window, "pointercancel", release);
         const stop = loop((dt) => {
           if (sliding) {
-            y -= vy * dt;
-            vy -= mu * dt;
-            if (y < END - 12) {
-              sliding = false; out = true;
-              const o = document.createElement("div");
-              o.className = "curl-out";
-              o.textContent = "場外";
-              root.appendChild(o);
-              sfx.fail();
-            } else if (vy <= 0) {
-              sliding = false; vy = 0;
-              sfx.impact();
-            }
+            y -= vy * dt; vy -= 900 * dt;
+            if (y < END) { y = END; sliding = false; }
+            else if (vy <= 0) { sliding = false; vy = 0; }
             place();
           }
           report();
         });
-
         return () => { stop(); ev.off(); };
       }
     },
 
-    {
-      id: "dice",
-      name: "16連サイコロ",
-      pain: "randomness",
-      topics: ["volume"],
-      /* 出目の合計（16〜96）がそのまま音量。サイコロを固定しながら振り直せる（ヨット式）。 */
-      mount(root, { onChange }) {
-        const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-        root.innerHTML =
-          '<div class="hintline" style="top:14px">合計が音量。タップで固定、「振る」で残りを振り直す。</div>' +
-          '<div class="dice-grid" id="dice"></div>' +
-          '<div class="dice-foot"><span class="dice-sum" id="diceSum"></span><button class="roll-btn" id="rollBtn" type="button">振る</button></div>';
-        const grid = $("dice"), sumEl = $("diceSum");
-        const dice = Array.from({ length: 16 }, () => ({ v: 1, held: false, el: null }));
-        dice.forEach((d, i) => {
-          d.el = document.createElement("button");
-          d.el.type = "button";
-          d.el.className = "die";
-          d.el.setAttribute("aria-label", "サイコロ " + (i + 1));
-          d.el.innerHTML = "<i></i>".repeat(9);
-          grid.appendChild(d.el);
-        });
-        const draw = () => {
-          let sum = 0;
-          dice.forEach((d) => {
-            sum += d.v;
-            [...d.el.children].forEach((p, k) => p.classList.toggle("on", PIPS[d.v].includes(k)));
-            d.el.classList.toggle("held", d.held);
-          });
-          sumEl.textContent = "合計 " + sum;
-          onChange(sum);
+    keypad: {
+      name: "シャッフル・テンキー", task: "money",
+      /* 押すたびにキーの並びが入れ替わる */
+      mount(root, { task, onChange }) {
+        root.innerHTML = '<div class="pad-disp" id="disp">¥0</div><div class="pad-grid" id="grid"></div>';
+        const disp = $("disp"), grid = $("grid"), ev = listeners();
+        const KEYS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "00", "C"];
+        let typed = "";
+        const shuffle = () => {
+          const k = KEYS.slice();
+          for (let i = k.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [k[i], k[j]] = [k[j], k[i]]; }
+          grid.innerHTML = k.map((x) => '<button type="button" class="key' + (x === "C" ? " fn" : "") + '" data-k="' + x + '">' + (x === "C" ? "クリア" : x) + "</button>").join("");
         };
-        const roll = () => { dice.forEach((d) => { if (!d.held) d.v = 1 + Math.floor(Math.random() * 6); }); draw(); };
-        roll();
-
-        const ev = listeners();
+        const report = () => {
+          const v = clamp(Number(typed || "0"), task.min, task.max);
+          disp.textContent = task.format(v);
+          onChange(toPct(task, v));
+        };
+        shuffle(); report();
         ev.on(grid, "pointerdown", (e) => {
-          const el = e.target.closest(".die");
-          if (!el) return;
+          const b = e.target.closest(".key");
+          if (!b) return;
           e.preventDefault();
-          const d = dice.find((x) => x.el === el);
-          d.held = !d.held;
-          draw();
-          sfx.click();
-        });
-        ev.on($("rollBtn"), "pointerdown", (e) => {
-          e.preventDefault();
-          roll();
-          noise(.12, .1);
+          typed = b.dataset.k === "C" ? "" : (typed + b.dataset.k).replace(/^0+(?=\d)/, "").slice(0, 4);
+          report(); shuffle();
         });
         return () => ev.off();
       }
     },
 
-    {
-      id: "pi",
-      name: "円周率スクロール",
-      pain: "effort",
-      topics: ["volume"],
-      /* 円周率の小数を横一列に並べ、枠に入った2桁が音量。欲しい2桁を探して横に流すしかない。 */
-      mount(root, { onChange }) {
-        const digits = piDigits();
-        const W = 30;
-        root.style.touchAction = "pan-x";   // この入力欄だけは横スクロールを許す
-        root.innerHTML =
-          '<div class="hintline">枠に入った2桁が音量。横に流して探す。</div>' +
-          '<div class="pi-strip" id="piStrip"><div class="pi-digits" id="piDigits"></div></div>' +
-          '<div class="pi-window"></div>' +
-          '<div class="pi-pos" id="piPos"></div>';
-        const strip = $("piStrip"), pos = $("piPos");
-        const pad = root.clientWidth / 2 - W;
-        const box = $("piDigits");
-        box.style.padding = "0 " + pad + "px";
-        box.innerHTML = digits.split("").map((d) => "<span>" + d + "</span>").join("");
-
-        const ev = listeners();
-        const read = () => {
-          const i = clamp(Math.round(strip.scrollLeft / W), 0, digits.length - 2);
-          pos.textContent = "小数第 " + (i + 1) + "〜" + (i + 2) + " 位";
-          onChange(Number(digits[i]) * 10 + Number(digits[i + 1]));
-        };
-        read();
-        ev.on(strip, "scroll", read, { passive: true });
-        return () => { ev.off(); root.style.touchAction = ""; };
-      }
-    },
-
-    {
-      id: "tearoff",
-      name: "日めくり",
-      pain: "precision",
-      topics: ["date"],
-      /* 10/1 から上に払ってめくる。速く払うほど一度に何枚もめくれる。めくった紙は戻らない。 */
-      mount(root, { topic, onChange }) {
-        root.innerHTML =
-          '<div class="hintline" style="top:14px">上に払ってめくる。速いほど何枚もめくれます。<br>めくった紙は戻りません。</div>' +
-          '<div class="cal" id="cal"><div class="cal-back"></div></div>';
-        const cal = $("cal");
-        const ev = listeners();
-        let day = topic.min, startY = 0, startT = 0, down = false;
-
-        const page = (d) => {
-          const wd = new Date(2026, 9, d).getDay();
-          const el = document.createElement("div");
-          el.className = "cal-page" + (wd === 0 ? " sun" : "");
-          el.innerHTML = '<div class="cal-month">2026年 10月</div><div class="cal-day">' + d +
-            '</div><div class="cal-wd">' + WEEKDAYS[wd] + "曜日</div>";
-          return el;
-        };
-        let current = page(day);
-        cal.appendChild(current);
-        onChange(toPct(topic, day));
-
-        ev.on(root, "pointerdown", (e) => {
-          e.preventDefault();
-          down = true; startY = e.clientY; startT = performance.now();
-        });
+    tearoff: {
+      name: "日めくり", task: "date",
+      /* 上に払ってめくる。速いほど何枚もめくれ、めくった紙は戻らない */
+      mount(root, { task, onChange }) {
+        root.innerHTML = '<div class="hint">上に払ってめくります（戻せません）</div><div class="cal" id="cal"></div>';
+        const cal = $("cal"), ev = listeners();
+        let day = 1, downY = 0, downT = 0, down = false;
+        const page = (d) => el('<div class="cal-page"><div class="cal-m">10月</div><div class="cal-day">' + d + "</div></div>");
+        let cur = page(day);
+        cal.appendChild(cur);
+        onChange(toPct(task, day));
+        ev.on(root, "pointerdown", (e) => { e.preventDefault(); down = true; downY = e.clientY; downT = performance.now(); });
         const release = (e) => {
           if (!down) return;
           down = false;
-          const dy = startY - e.clientY;
-          if (dy < 30 || day >= topic.max) return;
-          const speed = dy / Math.max(16, performance.now() - startT);   // px/ms
-          const n = clamp(Math.round(speed * 2.5), 1, 8);
-          const next = Math.min(topic.max, day + n);
-          // めくった紙を飛ばし、下から次の日を出す
-          const torn = current;
+          const dy = downY - e.clientY;
+          if (dy < 30 || day >= task.max) return;
+          const n = clamp(Math.round(dy / Math.max(16, performance.now() - downT) * 2.5), 1, 8);
+          day = Math.min(task.max, day + n);
+          const torn = cur;
           torn.classList.add("torn");
-          setTimeout(() => torn.remove(), 460);
-          day = next;
-          current = page(day);
-          cal.insertBefore(current, torn);
-          onChange(toPct(topic, day));
-          for (let i = 0; i < Math.min(n, 4); i++) setTimeout(sfx.paper, i * 50);
+          setTimeout(() => torn.remove(), 420);
+          cur = page(day);
+          cal.insertBefore(cur, torn);
+          onChange(toPct(task, day));
         };
         ev.on(window, "pointerup", release);
         ev.on(window, "pointercancel", () => { down = false; });
@@ -1584,75 +542,19 @@
       }
     },
 
-    {
-      id: "keypad",
-      name: "シャッフル・テンキー",
-      pain: "effort",
-      topics: ["money"],
-      /* 押すたびにキーの並びが入れ替わるテンキー。4桁まで。 */
-      mount(root, { topic, onChange }) {
-        root.innerHTML =
-          '<div class="hintline" style="top:18px">押すたびにキーの並びが変わります。</div>' +
-          '<div class="pad-display" id="padDisp">¥0</div>' +
-          '<div class="pad-grid" id="padGrid"></div>';
-        const disp = $("padDisp"), grid = $("padGrid");
-        const KEYS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "00", "C"];
-        let typed = "";
-
-        const shuffle = () => {
-          const k = KEYS.slice();
-          for (let i = k.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [k[i], k[j]] = [k[j], k[i]];
-          }
-          grid.innerHTML = k.map((x) =>
-            '<button type="button" class="key' + (x === "C" ? " fn" : "") + '" data-k="' + x + '">' + (x === "C" ? "クリア" : x) + "</button>").join("");
-        };
-        const report = () => {
-          const v = clamp(Number(typed || "0"), topic.min, topic.max);
-          disp.textContent = topic.format(v);
-          onChange(toPct(topic, v));
-        };
-        shuffle(); report();
-
-        const ev = listeners();
-        ev.on(grid, "pointerdown", (e) => {
-          const b = e.target.closest(".key");
-          if (!b) return;
-          e.preventDefault();
-          const k = b.dataset.k;
-          if (k === "C") typed = "";
-          else typed = (typed + k).replace(/^0+(?=\d)/, "").slice(0, 4);
-          report();
-          shuffle();
-          sfx.click();
-        });
-        return () => ev.off();
-      }
-    },
-
-    {
-      id: "shout",
-      name: "叫ぶ",
-      pain: "social",
-      needs: "mic",
-      /* 声の大きさがそのまま値。時間切れの瞬間まで同じ声量を保たないといけない。 */
-      mount(root, { topic, onChange }) {
-        root.innerHTML =
-          '<div class="hintline">声の大きさが値。最後の瞬間まで保ってください。</div>' +
-          '<div class="shout-meter"><i id="shoutFill"></i></div>' +
-          '<div class="shout-word">叫べ</div>';
-        const fill = $("shoutFill");
-        const buf = new Float32Array(CAP.analyser.fftSize);
+    shout: {
+      name: "叫ぶ", task: "volume", needs: "mic",
+      /* 声の大きさが値。確定の瞬間まで声量を保つ必要がある */
+      mount(root, { onChange }) {
+        root.innerHTML = '<div class="hint">声の大きさが値になります</div><div class="meter"><i id="lv"></i></div>';
+        const fill = $("lv"), buf = new Float32Array(SENSORS.analyser.fftSize);
         let x = 0;
-        audio();
         const stop = loop((dt) => {
-          CAP.analyser.getFloatTimeDomainData(buf);
+          SENSORS.analyser.getFloatTimeDomainData(buf);
           let sum = 0;
           for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
           const db = 20 * Math.log10(Math.sqrt(sum / buf.length) + 1e-9);
-          const target = clamp((db + 55) / 45 * 100, 0, 100);   // -55dB で 0、-10dB で 100
-          x += (target - x) * Math.min(1, dt * 6);
+          x += (clamp((db + 55) / 45 * 100, 0, 100) - x) * Math.min(1, dt * 6);
           fill.style.height = x + "%";
           onChange(x);
         });
@@ -1660,312 +562,478 @@
       }
     },
 
-    {
-      id: "level",
-      name: "水準器",
-      pain: "precision",
-      needs: "tilt",
-      /* 端末を左右に傾けて気泡を動かす。気泡の位置が値。 */
-      mount(root, { topic, onChange }) {
-        root.innerHTML =
-          '<div class="hintline">端末を左右に傾けて、気泡を目盛りに合わせる。</div>' +
-          '<div class="vial" id="vial"><div class="bubble" id="bubble"></div></div>';
-        addScale(root, topic, { top: "calc(50% + 34px)", bottom: "auto", left: "24px", right: "24px" });
-        const bubble = $("bubble");
+    level: {
+      name: "水準器", task: "volume", needs: "tilt",
+      /* 端末を左右に傾けて気泡の位置を合わせる */
+      mount(root, { onChange }) {
+        root.innerHTML = '<div class="hint">端末を左右に傾けてください</div><div class="vial"><div class="bubble" id="bub"></div></div>';
+        const bub = $("bub");
         let x = 50;
         const stop = loop((dt) => {
-          const target = clamp((CAP.gamma + 40) / 80 * 100, 0, 100);   // 左 40° で 0、右 40° で 100
-          x += (target - x) * Math.min(1, dt * 5);
-          bubble.style.left = x + "%";
+          x += (clamp((SENSORS.gamma + 40) / 80 * 100, 0, 100) - x) * Math.min(1, dt * 5);
+          bub.style.left = x + "%";
           onChange(x);
         });
         return stop;
       }
     }
-  ];
+  };
 
-  /** 円周率の小数を n 桁（Machin の公式を BigInt で計算。一度だけ計算して使い回す） */
+  /** 円周率の小数（Machin の公式を BigInt で計算。一度だけ計算して使い回す） */
   let piCache = null;
-  function piDigits(n = 1200) {
+  function piDigits(n = 600) {
     if (piCache) return piCache;
     const scale = 10n ** BigInt(n + 10);
     const arctanInv = (x) => {
       const X = BigInt(x), X2 = X * X;
       let term = scale / X, sum = term, k = 1n, sign = -1n;
-      while (term !== 0n) {
-        term /= X2;
-        sum += sign * (term / (2n * k + 1n));
-        sign = -sign;
-        k++;
-      }
+      while (term !== 0n) { term /= X2; sum += sign * (term / (2n * k + 1n)); sign = -sign; k++; }
       return sum;
     };
-    const pi = 16n * arctanInv(5) - 4n * arctanInv(239);
-    piCache = pi.toString().slice(1, n + 1);
+    piCache = (16n * arctanInv(5) - 4n * arctanInv(239)).toString().slice(1, n + 1);
     return piCache;
   }
 
-  /* ============ 出題の固定（?only=<コントローラid>&topic=<お題id>） ============ */
-  const params = new URLSearchParams(location.search);
-  const ONLY = params.get("only");
-  const TOPIC_ONLY = params.get("topic");
+  /* ============ センサー（叫ぶ・水準器を使うときだけ許可を求める） ============ */
+  const SENSORS = { mic: false, tilt: false, analyser: null, gamma: 0 };
 
-  function usable(c) { return !c.needs || CAP[c.needs]; }
-  function controllersFor(topicId) {
-    return CONTROLLERS.filter((c) => usable(c) && (!c.topics || c.topics.includes(topicId)) && (!ONLY || c.id === ONLY));
+  async function askMic() {
+    if (SENSORS.mic) return "ok";
+    if (!window.isSecureContext) return "https で開いていないため、ブラウザがマイクを許可しません";
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return "このブラウザはマイク入力に対応していません";
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      const ac = new Ctx();
+      if (ac.state === "suspended") await ac.resume();
+      SENSORS.analyser = ac.createAnalyser();
+      SENSORS.analyser.fftSize = 1024;
+      ac.createMediaStreamSource(stream).connect(SENSORS.analyser);
+      SENSORS.mic = true;
+      return "ok";
+    } catch (e) { return e.name + ": " + e.message; }
   }
-  function playableTopics() {
-    const all = TOPICS.filter((t) => controllersFor(t.id).length);
-    const narrowed = all.filter((t) => !TOPIC_ONLY || t.id === TOPIC_ONLY);
-    // 指定のコントローラが指定のお題に対応していなければ、お題の指定のほうを無視する
-    return narrowed.length ? narrowed : all;
-  }
-
-  /* ============ タイトル画面 ============ */
-  const PAIN_LABEL = { randomness: "再現性がない", precision: "精度が出ない", effort: "操作量が多い", social: "社会的コストが高い" };
-
-  function drawTitle() {
-    $("topicGrid").innerHTML = TOPICS.map((t) =>
-      '<div class="topic-cell"><b>' + t.name + "</b><span>" +
-      t.format(snap(t, t.min + .7 * (t.max - t.min), t.targetStep)) + "</span></div>").join("");
-
-    $("rosterLabel").textContent = "入力欄 " + CONTROLLERS.length + "種";
-    $("roster").innerHTML = Object.keys(PAIN_LABEL).map((p) => {
-      const names = CONTROLLERS.filter((c) => c.pain === p).map((c) => {
-        const only = c.topics ? '<span class="only-topic">（' + c.topics.map((id) => TOPICS.find((t) => t.id === id).name).join("・") + "のみ）</span>" : "";
-        const locked = c.needs && !CAP[c.needs];
-        return '<span class="' + (locked ? "locked" : "") + '">' + c.name + only + (locked ? " 🔒" : "") + "</span>";
-      });
-      return '<div class="roster-row"><span class="pain" data-pain="' + p + '">' + PAIN_LABEL[p] +
-        '</span><div class="names">' + names.join("") + "</div></div>";
-    }).join("");
-
-    if (ONLY || TOPIC_ONLY) {
-      const c = CONTROLLERS.find((x) => x.id === ONLY), t = TOPICS.find((x) => x.id === TOPIC_ONLY);
-      $("onlyNote").hidden = false;
-      $("onlyNote").textContent = "出題を固定中: " +
-        (ONLY ? (c ? c.name : "（不明な id: " + ONLY + "）") : "全入力欄") + " × " +
-        (TOPIC_ONLY ? (t ? t.name : "（不明な id: " + TOPIC_ONLY + "）") : "全お題");
-    }
-  }
-
-  /* マイクと傾きセンサーの許可。iOS の傾きはユーザー操作の中でしか許可を求められないので、
-     ボタンを押した処理の中で真っ先に requestPermission を呼ぶ。 */
-  async function enableSensors() {
-    const tiltReq = (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function")
-      ? DeviceOrientationEvent.requestPermission() : null;
-    $("capStatus").textContent = "確認中…";
-    $("optinBtn").setAttribute("aria-pressed", "true");
-
-    const mic = (async () => {
-      if (CAP.mic) return "使える";
-      if (!window.isSecureContext) return "使えない — https で開いていないため、ブラウザがマイクを許可しません";
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return "使えない — このブラウザはマイク入力に対応していません";
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const c = audio();
-        CAP.analyser = c.createAnalyser();
-        CAP.analyser.fftSize = 1024;
-        c.createMediaStreamSource(stream).connect(CAP.analyser);
-        CAP.mic = true;
-        return "使える";
-      } catch (e) {
-        return "使えない — " + e.name + ": " + e.message;
+  async function askTilt() {
+    if (SENSORS.tilt) return "ok";
+    if (!window.DeviceOrientationEvent) return "このブラウザは傾きセンサーに対応していません";
+    if (!window.isSecureContext) return "https で開いていないため、ブラウザが傾きセンサーを許可しません";
+    try {
+      if (typeof DeviceOrientationEvent.requestPermission === "function") {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res !== "granted") return "許可されませんでした（" + res + "）";
       }
-    })();
-
-    const tilt = (async () => {
-      if (CAP.tilt) return "使える";
-      if (!window.DeviceOrientationEvent) return "使えない — このブラウザは傾きセンサーに対応していません";
-      if (!window.isSecureContext) return "使えない — https で開いていないため、ブラウザが傾きセンサーを許可しません";
-      try {
-        if (tiltReq) {
-          const res = await tiltReq;
-          if (res !== "granted") return "使えない — 許可されませんでした（" + res + "）";
-        }
-      } catch (e) {
-        return "使えない — " + e.name + ": " + e.message;
-      }
-      // 許可が取れても、センサーの無い端末（PC など）では値が届かない
-      const ok = await new Promise((resolve) => {
-        const on = (e) => { if (e.gamma !== null) { window.removeEventListener("deviceorientation", on); resolve(true); } };
-        window.addEventListener("deviceorientation", on);
-        setTimeout(() => { window.removeEventListener("deviceorientation", on); resolve(false); }, 1500);
-      });
-      if (!ok) return "使えない — 傾きセンサーから値が届きません（センサーの無い端末など）";
-      window.addEventListener("deviceorientation", (e) => { if (e.gamma !== null) CAP.gamma = e.gamma; });
-      CAP.tilt = true;
-      return "使える";
-    })();
-
-    const [m, t] = await Promise.all([mic, tilt]);
-    $("capStatus").textContent = "マイク（叫ぶ）: " + m + "\n傾きセンサー（水準器）: " + t;
-    drawTitle();
-  }
-
-  /* ============ ゲーム進行 ============ */
-  const DURATION = 8;      // 1本あたりの秒数
-  const MAX_LIVES = 4;
-
-  const S = {
-    stage: 0, lives: MAX_LIVES, cleared: 0,
-    topic: TOPICS[0], target: 50, tol: 5, pct: 0, value: 0,
-    lastId: null, cleanup: null,
-    raf: 0, endAt: 0, ticked: -1
-  };
-
-  function show(id) {
-    document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === id));
-  }
-  function overlay(html, ms) {
-    $("overlayInner").innerHTML = html;
-    $("overlay").classList.add("on");
-    return new Promise((r) => setTimeout(() => { $("overlay").classList.remove("on"); r(); }, ms));
-  }
-
-  function drawLives() {
-    $("lives").innerHTML = "";
-    for (let i = 0; i < MAX_LIVES; i++) {
-      const d = document.createElement("div");
-      d.className = "life" + (i < S.lives ? "" : " out");
-      $("lives").appendChild(d);
-    }
-  }
-
-  const isHit = () => Math.abs(S.value - S.target) <= S.tol + 1e-9;
-
-  function drawHud() {
-    $("volNum").textContent = S.topic.format(S.value);
-    $("needle").style.left = S.pct + "%";
-    $("volNum").classList.toggle("hit", isHit());
-  }
-
-  /** 目標は範囲の 30〜90%（ランチャーの最短飛距離が約 29% のため）から、出題の刻みで選ぶ */
-  function pickTarget(t) {
-    const ts = t.targetStep, range = t.max - t.min;
-    const lo = Math.ceil(.3 * range / ts), hi = Math.floor(.9 * range / ts);
-    return snap(t, t.min + (lo + Math.floor(Math.random() * (hi - lo + 1))) * ts, ts);
-  }
-
-  /** 許容誤差: 範囲の 5% から 5 ステージごとに 1% ずつ狭め、最小 2%。お題の刻みに丸める */
-  function pickTol(t) {
-    const pct = Math.max(2, 5 - Math.floor((S.stage - 1) / 5));
-    return snap({ ...t, min: 0, max: Infinity }, pct / 100 * (t.max - t.min));
-  }
-
-  async function nextStage() {
-    const topics = playableTopics();
-    S.stage++;
-    S.topic = pick(topics);
-    let pool = controllersFor(S.topic.id);
-    if (pool.length > 1) pool = pool.filter((c) => c.id !== S.lastId);
-    const ctrl = pick(pool);
-    S.lastId = ctrl.id;
-
-    S.target = pickTarget(S.topic);
-    S.tol = pickTol(S.topic);
-    S.pct = 0;
-    S.value = S.topic.min;
-
-    const zoneLo = toPct(S.topic, clamp(S.target - S.tol, S.topic.min, S.topic.max));
-    const zoneHi = toPct(S.topic, clamp(S.target + S.tol, S.topic.min, S.topic.max));
-    $("targetNum").textContent = S.topic.format(S.target);
-    $("tolText").textContent = S.topic.tolLabel(S.tol);
-    $("zone").style.left = zoneLo + "%";
-    $("zone").style.width = (zoneHi - zoneLo) + "%";
-    $("ctrlName").textContent = S.topic.name + " × " + ctrl.name;
-    drawLives();
-    drawHud();
-    show("play");
-
-    await overlay(
-      '<div class="big">' + S.topic.prompt(S.target) + "</div>" +
-      '<div class="sub">' + ctrl.name + " ／ " + S.topic.tolLabel(S.tol) + "</div>", 1100);
-
-    startStage(ctrl);
-  }
-
-  function startStage(ctrl) {
-    const stage = $("stage");
-    stage.innerHTML = "";
-    const topic = S.topic;
-    S.cleanup = ctrl.mount(stage, {
-      topic,
-      target: S.target,
-      onChange: (p) => {
-        S.pct = clamp(Number(p) || 0, 0, 100);
-        S.value = fromPct(topic, S.pct);
-      }
+    } catch (e) { return e.name + ": " + e.message; }
+    const ok = await new Promise((resolve) => {
+      const on = (e) => { if (e.gamma !== null) { window.removeEventListener("deviceorientation", on); resolve(true); } };
+      window.addEventListener("deviceorientation", on);
+      setTimeout(() => { window.removeEventListener("deviceorientation", on); resolve(false); }, 1500);
     });
+    if (!ok) return "傾きセンサーから値が届きません（センサーの無い端末など）";
+    window.addEventListener("deviceorientation", (e) => { if (e.gamma !== null) SENSORS.gamma = e.gamma; });
+    SENSORS.tilt = true;
+    return "ok";
+  }
 
-    S.endAt = performance.now() + DURATION * 1000;
-    S.ticked = -1;
-    $("timerFill").classList.remove("warn");
+  /* ============ ステップ ============
+     各ステップは条件を満たしたら done() を呼ぶだけ。進捗・時間・遷移は親が持つ。 */
 
-    const tick = (now) => {
-      const left = Math.max(0, S.endAt - now);
-      $("timerFill").style.transform = "scaleX(" + (left / (DURATION * 1000)) + ")";
-      drawHud();
+  /** 値を合わせる設定ステップを作る。?ctrl= を付けると入力欄を差し替えられる */
+  function settingStep(id, title, label, defaultCtrl, target) {
+    return {
+      id, title, pain: "precision",
+      mount(root, { done }) {
+        const ctrlId = (CTRL && CONTROLLERS[CTRL]) ? CTRL : defaultCtrl;
+        const ctrl = CONTROLLERS[ctrlId];
+        const task = TASKS[ctrl.task];
+        // 差し替えた入力欄の種類に合わせて、目標と項目名を決める
+        const goal = ctrl.task === "volume" ? target : ctrl.task === "money" ? 3280 : 14;
+        const name = ctrl.task === "volume" ? label : ctrl.task === "money" ? "月額料金" : "利用開始日";
 
-      const sec = Math.ceil(left / 1000);
-      if (sec <= 3) {
-        $("timerFill").classList.add("warn");
-        if (sec !== S.ticked) { S.ticked = sec; if (sec > 0) sfx.tick(); }
+        root.innerHTML =
+          '<div class="card">' +
+          "<p>" + name + "を <b>" + task.format(goal) + "</b> に設定してください。</p>" +
+          '<div class="readout">' +
+          '<div><span>目標</span> <b class="t">' + task.format(goal) + "</b></div>" +
+          '<div><span>現在</span> <b id="cur">-</b></div></div>' +
+          '<div id="ctrlArea"></div>' +
+          '<button class="btn" id="go" type="button" style="margin-top:12px">この値で設定する</button>' +
+          '<div id="msg"></div>' +
+          '<div class="note" style="margin-top:8px">入力方法: ' + ctrl.name + "（許容差 ±" + task.tol + "）</div>" +
+          "</div>";
+
+        const ev = listeners();
+        let value = task.min, cleanupCtrl = () => {};
+        const start = () => {
+          cleanupCtrl = ctrl.mount($("ctrlArea"), {
+            task,
+            onChange: (p) => { value = fromPct(task, clamp(Number(p) || 0, 0, 100)); $("cur").textContent = task.format(value); }
+          });
+        };
+
+        if (ctrl.needs) {
+          // センサーが要る入力欄は、ここで許可を求める
+          $("ctrlArea").innerHTML = '<div style="padding:16px"><button class="btn" id="grant" type="button">' +
+            (ctrl.needs === "mic" ? "マイクの使用を許可する" : "傾きセンサーの使用を許可する") +
+            '</button><div id="sensorMsg" class="note" style="margin-top:10px"></div></div>';
+          ev.on($("grant"), "click", async () => {
+            $("sensorMsg").textContent = "確認中…";
+            const res = ctrl.needs === "mic" ? await askMic() : await askTilt();
+            if (res === "ok") { $("ctrlArea").innerHTML = ""; start(); }
+            else $("sensorMsg").textContent = "使えません — " + res;
+          });
+        } else {
+          start();
+        }
+
+        ev.on($("go"), "click", () => {
+          if (Math.abs(value - goal) <= task.tol) done();
+          else $("msg").innerHTML = '<div class="err">' + (value > goal ? "値が大きすぎます" : "値が小さすぎます") + "</div>";
+        });
+        return () => { cleanupCtrl(); ev.off(); };
       }
-
-      if (left <= 0) { judge(); return; }
-      S.raf = requestAnimationFrame(tick);
     };
-    S.raf = requestAnimationFrame(tick);
   }
 
-  async function judge() {
-    cancelAnimationFrame(S.raf);
-    if (S.cleanup) { S.cleanup(); S.cleanup = null; }
-    $("stage").innerHTML = "";
-    $("stage").style.touchAction = "";
+  const STEPS = [
+    {
+      id: "entry",
+      title: "アカウント登録をはじめる",
+      pain: "visibility",
+      /* 大きく目立つボタンはすべて偽物。本物は隅の極小リンク */
+      mount(root, { done }) {
+        root.innerHTML =
+          '<div class="card">' +
+          "<p>ご利用には、アカウントの登録が必要です。</p>" +
+          '<button class="decoy" type="button" data-fake="ただいま混み合っています。しばらくしてからお試しください">いますぐ登録する</button>' +
+          '<button class="decoy second" type="button" data-fake="この機能は現在ご利用いただけません">かんたん登録（おすすめ）</button>' +
+          '<button class="decoy third" type="button" data-fake="サポート窓口は本日休業しています">登録について問い合わせる</button>' +
+          '<p class="note" style="text-align:right;margin-top:10px">' +
+          '<button class="real-start" id="realStart" type="button">登録をはじめる</button></p>' +
+          "</div>";
+        const ev = listeners();
+        ev.on(root, "click", (e) => {
+          const f = e.target.closest("[data-fake]");
+          if (f) toast(f.dataset.fake);
+        });
+        ev.on($("realStart"), "click", done);
+        return () => ev.off();
+      }
+    },
 
-    const ok = isHit();
-    if (ok) { S.cleared++; sfx.clear(); }
-    else    { S.lives--; sfx.fail(); }
-    drawLives();
+    {
+      id: "cookie",
+      title: "Cookie の利用に同意してください",
+      pain: "dark-pattern",
+      /* 二重否定のチェックと、押そうとすると逃げる同意ボタン */
+      mount(root, { done }) {
+        root.innerHTML =
+          '<div class="card">' +
+          '<p class="note">当サイトは利便性向上のため Cookie を使用します。</p>' +
+          '<label class="check-row" style="margin-top:12px"><input type="checkbox" id="cbA">' +
+          "<span>マーケティング目的でのデータ利用を希望しないわけではありません（必須）</span></label>" +
+          '<label class="check-row" style="margin-top:10px"><input type="checkbox" id="cbB">' +
+          "<span>上記に同意しないという意思表示を行わないことに同意します（必須）</span></label>" +
+          '<div class="cookie-actions">' +
+          '<button id="agreeBtn" type="button">同意して次へ</button>' +
+          '<button class="reject" id="rejectBtn" type="button">すべて拒否する</button>' +
+          "</div></div>";
+        const ev = listeners();
+        const btn = $("agreeBtn"), area = btn.parentElement;
+        let flee = 0;
+        // 決まった順に逃げる（乱数なし）。3回逃げたら押せるようになる
+        const SPOTS = [[1, 0], [0, 1], [.5, .45]];
+        const moveAway = () => {
+          const [fx, fy] = SPOTS[flee % SPOTS.length];
+          flee++;
+          btn.style.left = fx * (area.clientWidth - btn.offsetWidth) + "px";
+          btn.style.top = fy * (area.clientHeight - btn.offsetHeight) + "px";
+        };
+        ev.on(btn, "pointerdown", (e) => {
+          if (flee < 3) { e.preventDefault(); moveAway(); toast("ボタンの位置が変更されました"); return; }
+          if (!$("cbA").checked || !$("cbB").checked) { toast("必須項目にご同意ください"); return; }
+          done();
+        });
+        ev.on($("rejectBtn"), "click", () => toast("設定を保存できませんでした。もう一度お試しください"));
+        return () => ev.off();
+      }
+    },
 
-    const line = S.topic.format(S.value) + " ／ 目標 " + S.topic.format(S.target);
-    await overlay(
-      ok
-        ? '<div class="big ok">ぴったり！</div><div class="sub">' + line + "</div>"
-        : '<div class="big bad">' + (S.value > S.target ? "行きすぎ" : "足りない") + '</div><div class="sub">' + line + "</div>",
-      1000);
+    {
+      id: "email",
+      title: "メールアドレスを登録してください",
+      pain: "effort",
+      /* 確認欄はコピペ禁止・文字が右から左に並ぶ */
+      mount(root, { done }) {
+        root.innerHTML =
+          '<div class="card rows">' +
+          "<div><label>メールアドレス</label>" +
+          '<input type="text" id="m1" inputmode="email" autocomplete="off" placeholder="you@example.com"></div>' +
+          "<div><label>メールアドレス（確認用）</label>" +
+          '<input type="text" id="m2" class="rtl" inputmode="email" autocomplete="off">' +
+          '<div class="note" style="margin-top:6px">確認用の欄は貼り付けできません。</div></div>' +
+          '<button class="btn" id="go" type="button">次へ</button>' +
+          '<div id="msg"></div></div>';
+        const ev = listeners();
+        ev.on($("m2"), "paste", (e) => { e.preventDefault(); toast("貼り付けはご利用いただけません"); });
+        ev.on($("go"), "click", () => {
+          const a = $("m1").value.trim(), b = $("m2").value.trim();
+          if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a)) { $("msg").innerHTML = '<div class="err">メールアドレスの形式が正しくありません</div>'; return; }
+          if (a !== b) { $("msg").innerHTML = '<div class="err">2つの入力が一致しません</div>'; return; }
+          done();
+        });
+        return () => ev.off();
+      }
+    },
 
-    if (S.lives <= 0) gameOver();
-    else nextStage();
-  }
+    {
+      id: "password",
+      title: "パスワードを作成してください",
+      pain: "effort",
+      /* 条件を満たすたびに、次の条件が現れる */
+      mount(root, { done }) {
+        root.innerHTML =
+          '<div class="card">' +
+          "<label>パスワード</label>" +
+          '<input type="text" id="pw" autocomplete="off">' +
+          '<div class="rules" id="rules"></div>' +
+          '<button class="btn" id="go" type="button" style="margin-top:14px">この内容で登録する</button>' +
+          "</div>";
+        const RULES = [
+          { text: "8文字以上", ok: (v) => v.length >= 8 },
+          { text: "数字を1つ以上含む", ok: (v) => /\d/.test(v) },
+          { text: "記号（!#$% など）を1つ以上含む", ok: (v) => /[^\w\s]/.test(v) },
+          { text: "大文字を1つ以上含む", ok: (v) => /[A-Z]/.test(v) },
+          { text: "「ui」または「ux」を含む", ok: (v) => /u[ix]/i.test(v) }
+        ];
+        const ev = listeners();
+        let shown = 1;
+        const draw = () => {
+          const v = $("pw").value;
+          // 表示中の条件がすべて満たされたら、次の条件を1つ増やす
+          while (shown < RULES.length && RULES.slice(0, shown).every((r) => r.ok(v))) shown++;
+          $("rules").innerHTML = RULES.slice(0, shown).map((r) =>
+            '<div class="rule' + (r.ok(v) ? " done" : "") + '"><span>' + (r.ok(v) ? "✓" : "・") + "</span><span>" + r.text + "</span></div>").join("");
+        };
+        draw();
+        ev.on($("pw"), "input", draw);
+        ev.on($("go"), "click", () => {
+          const v = $("pw").value;
+          if (shown === RULES.length && RULES.every((r) => r.ok(v))) done();
+          else { draw(); toast("条件を満たしていない項目があります"); }
+        });
+        return () => ev.off();
+      }
+    },
 
-  function gameOver() {
-    sfx.gameover();
-    $("scoreNum").textContent = S.cleared;
-    $("overTitle").textContent = S.cleared >= 8 ? "入力マスター" : "おわり";
-    $("overNote").textContent =
-      S.cleared === 0 ? "1本も合いませんでした。それが正常な反応です。"
-      : S.cleared < 4 ? "この入力欄で合うほうがどうかしています。"
-      : "かなり慣れてしまいましたね。困ったことです。";
-    show("over");
-  }
+    {
+      id: "birthday",
+      title: "生年月日を選択してください",
+      pain: "effort",
+      /* 年・月・日をすべてラジオボタンで並べる（合計 170 個） */
+      mount(root, { done }) {
+        const radios = (name, from, to, unit, wide) => {
+          const items = [];
+          for (let v = from; v <= to; v++) items.push('<label><input type="radio" name="' + name + '" value="' + v + '"><span>' + v + unit + "</span></label>");
+          return '<div class="card"><label>' + unit + '</label><div class="radio-box' + (wide ? " wide" : "") + '">' + items.join("") + "</div></div>";
+        };
+        root.innerHTML = radios("y", 1900, 2026, "年") + radios("m", 1, 12, "月", true) + radios("d", 1, 31, "日", true) +
+          '<div class="card"><div class="picked" id="picked">____年 __月 __日</div>' +
+          '<button class="btn" id="go" type="button" style="margin-top:10px">次へ</button></div>';
+        const ev = listeners();
+        const val = (n) => { const c = root.querySelector('input[name="' + n + '"]:checked'); return c ? c.value : null; };
+        ev.on(root, "change", () => {
+          $("picked").textContent = (val("y") || "____") + "年 " + (val("m") || "__") + "月 " + (val("d") || "__") + "日";
+        });
+        ev.on($("go"), "click", () => {
+          if (val("y") && val("m") && val("d")) done();
+          else toast("年・月・日をすべて選択してください");
+        });
+        return () => ev.off();
+      }
+    },
 
-  function startGame() {
-    audio();                      // 最初のタップで AudioContext を起こす
-    if (!playableTopics().length) {
-      $("capStatus").textContent = "指定の入力欄はいま使えません。上のボタンでマイク・傾きセンサーを許可してください。";
-      return;
+    // 以前の「音量調整」入力欄は、通知まわりの設定として3つ続けて出す
+    settingStep("vol-notify", "通知音量を設定してください", "通知音量", "physics-slider", 70),
+    settingStep("vol-ring",   "着信音量を設定してください", "着信音量", "pump", 40),
+    settingStep("vol-alarm",  "アラーム音量を設定してください", "アラーム音量", "pi", 65),
+
+    {
+      id: "captcha",
+      title: "あなたがロボットでないことを証明してください",
+      pain: "effort",
+      /* 回を追うごとにタイルが増え、絵柄はゆっくり動く。2回はやり直しさせられる */
+      mount(root, { done }) {
+        const SIZES = [3, 4, 5];
+        let attempt = 0, stopDrift = () => {};
+        const ev = listeners();
+        // 信号機の位置は毎回同じ規則（3つおき）。乱数は使わない
+        const isTarget = (i) => i % 3 === 0;
+
+        const build = () => {
+          stopDrift();
+          const n = SIZES[Math.min(attempt, SIZES.length - 1)];
+          root.innerHTML =
+            '<div class="cap-head">信号機をすべて選択してください</div>' +
+            '<div class="cap-grid" id="grid" style="grid-template-columns:repeat(' + n + ',1fr)"></div>' +
+            '<button class="btn" id="verify" type="button" style="margin-top:12px">確認</button>' +
+            '<div id="msg"></div>';
+          const grid = $("grid");
+          grid.innerHTML = Array.from({ length: n * n }, (_, i) =>
+            '<div class="tile" data-i="' + i + '"><span class="mark">' + (isTarget(i) ? "🚦" : ["🌲", "🚗", "🏠", "🐟", "☂️"][i % 5]) + "</span></div>").join("");
+
+          // 絵柄がゆっくり動く（タイルの外には出ない）
+          let t = 0;
+          const marks = [...grid.querySelectorAll(".mark")];
+          stopDrift = loop((dt) => {
+            t += dt;
+            marks.forEach((m, i) => {
+              m.style.transform = "translate(" + (Math.sin(t * 1.1 + i) * 8).toFixed(1) + "px," + (Math.cos(t * .9 + i) * 8).toFixed(1) + "px)";
+            });
+          });
+
+          grid.onclick = (e) => {
+            const tile = e.target.closest(".tile");
+            if (tile) tile.classList.toggle("sel");
+          };
+          $("verify").onclick = () => {
+            const correct = [...grid.querySelectorAll(".tile")].every((t2, i) => t2.classList.contains("sel") === isTarget(i));
+            attempt++;
+            if (attempt < 3) {
+              $("msg").innerHTML = '<div class="err">認証に失敗しました。もう一度お試しください</div>';
+              setTimeout(build, 900);
+              return;
+            }
+            if (correct) done();
+            else { attempt = 2; $("msg").innerHTML = '<div class="err">選択が正しくありません</div>'; }
+          };
+        };
+        build();
+        return () => { stopDrift(); ev.off(); };
+      }
+    },
+
+    {
+      id: "terms",
+      title: "利用規約に同意してください",
+      pain: "dark-pattern",
+      /* 最後まで読まないと同意できない。途中で3回だけスクロールが戻る */
+      mount(root, { done }) {
+        const para = "第◯条 当社は、本サービスの提供にあたり、利用者に対して事前の通知なく内容を変更することがあります。" +
+          "利用者は、本サービスの利用にあたり、自己の責任において必要な準備を行うものとします。";
+        let body = "";
+        for (let i = 1; i <= 24; i++) body += "<p>" + para.replace("◯", i) + "</p>";
+        root.innerHTML =
+          '<div class="card">' +
+          '<div class="terms" id="terms">' + body + '<p style="font-weight:700">以上</p></div>' +
+          '<label class="check-row" style="margin-top:12px"><input type="checkbox" id="agree" disabled>' +
+          "<span>利用規約を最後まで読み、内容に同意します</span></label>" +
+          '<button class="btn" id="go" type="button" style="margin-top:12px" disabled>同意して次へ</button>' +
+          '<div class="note" style="margin-top:8px" id="tnote">最後までスクロールすると同意できます。</div>' +
+          "</div>";
+        const box = $("terms"), ev = listeners();
+        let backs = 0, reached = false;
+        ev.on(box, "scroll", () => {
+          const max = box.scrollHeight - box.clientHeight;
+          if (!reached && backs < 3 && box.scrollTop > (backs + 1) * max / 4) {
+            backs++;
+            box.scrollTop = Math.max(0, box.scrollTop - 160);
+            $("tnote").textContent = "読み込みのため位置を調整しました。";
+            return;
+          }
+          if (!reached && box.scrollTop >= max - 8) {
+            reached = true;
+            $("agree").disabled = false;
+            $("tnote").textContent = "同意できます。";
+          }
+        }, { passive: true });
+        ev.on($("agree"), "change", () => { $("go").disabled = !$("agree").checked; });
+        ev.on($("go"), "click", done);
+        return () => ev.off();
+      }
+    },
+
+    {
+      id: "submit",
+      title: "登録内容を送信してください",
+      pain: "dark-pattern",
+      /* 確認ダイアログが3回続き、最後の1つだけ「いいえ」が正解 */
+      mount(root, { done }) {
+        root.innerHTML =
+          '<div class="card"><p>入力内容の確認が完了しました。送信してください。</p>' +
+          '<button class="btn" id="send" type="button">送信する</button></div>';
+        const ev = listeners();
+        const dlg = $("dialog"), box = $("dialogBox");
+        const ask = (text, onYes, onNo) => {
+          box.innerHTML = "<p>" + text + '</p><div class="dbtns"><button class="no" type="button">いいえ</button><button class="yes" type="button">はい</button></div>';
+          dlg.classList.add("on");
+          box.querySelector(".yes").onclick = () => { dlg.classList.remove("on"); onYes(); };
+          box.querySelector(".no").onclick = () => { dlg.classList.remove("on"); onNo(); };
+        };
+        const cancel = () => toast("送信を中止しました。もう一度お試しください");
+        ev.on($("send"), "click", () => {
+          ask("本当に送信しますか？",
+            () => ask("入力内容に誤りがないことを確認しましたか？",
+              () => ask("送信をキャンセルしますか？", cancel, done),
+              cancel),
+            cancel);
+        });
+        return () => { dlg.classList.remove("on"); ev.off(); };
+      }
     }
-    S.stage = 0; S.lives = MAX_LIVES; S.cleared = 0; S.lastId = null;
-    nextStage();
+  ];
+
+  /* ============ 進行 ============ */
+  const list = ONLY ? STEPS.filter((s) => s.id === ONLY) : STEPS;
+  const S = { i: 0, t0: 0, cleanup: null };
+
+  /** 進捗バーは正直ではない。進んだり戻ったりし、完了まで 99% を超えない */
+  function drawProgress() {
+    const base = (S.i / list.length) * 100;
+    const shown = S.i % 2 === 0 ? base - 6 : base + 9;
+    $("fill").style.width = clamp(shown, 3, 99) + "%";
   }
 
-  drawTitle();
-  $("startBtn").addEventListener("click", startGame);
-  $("againBtn").addEventListener("click", startGame);
-  $("optinBtn").addEventListener("click", enableSensors);
+  function startStep() {
+    const step = list[S.i];
+    $("stepNo").textContent = "ステップ " + (S.i + 1) + " / " + list.length;
+    $("stepTitle").textContent = step.title;
+    drawProgress();
+    $("stage").innerHTML = "";
+    window.scrollTo(0, 0);
+    let finished = false;
+    S.cleanup = step.mount($("stage"), {
+      done: () => { if (!finished) { finished = true; next(); } }
+    });
+  }
+
+  function next() {
+    if (S.cleanup) { S.cleanup(); S.cleanup = null; }
+    S.i++;
+    if (S.i >= list.length) finish();
+    else startStep();
+  }
+
+  function finish() {
+    const sec = (performance.now() - S.t0) / 1000;
+    const mm = String(Math.floor(sec / 60)).padStart(2, "0");
+    const ss = String(Math.floor(sec % 60)).padStart(2, "0");
+    $("fill").style.width = "100%";
+    $("stepNo").textContent = "";
+    $("stepTitle").textContent = "登録が完了しました";
+    $("stage").innerHTML =
+      '<div id="done"><div class="lbl">かかった時間</div>' +
+      '<div class="time" id="time">' + mm + ":" + ss + "</div>" +
+      '<div class="lbl">' + list.length + " ステップ</div>" +
+      '<button class="btn" id="again" type="button" style="margin-top:24px">もう一度やる</button></div>';
+    $("again").addEventListener("click", () => location.reload());
+  }
+
+  if (!list.length) {
+    $("stepTitle").textContent = "指定されたステップが見つかりません（?only=" + ONLY + "）";
+    return;
+  }
+  S.t0 = performance.now();
+  startStep();
 })();
 </script>
 </body>
