@@ -10,8 +10,6 @@ summer_camp_2026/
 ├── README.md
 ├── index.html                  Pages のトップ。worst-volume/ へ転送するだけ
 ├── .github/workflows/pages.yml main への push で GitHub Pages に公開
-├── docs/
-│   └── weird-ui-research.md    変なUI・bad UI battles の調査記録（ネタ出しの元資料）
 └── worst-volume/
     └── index.html              ワースト・ボリューム選手権（1ファイル完結）
 ```
@@ -68,7 +66,8 @@ python3 -m http.server 8000  # PC のブラウザで http://localhost:8000/ を�
 | シャッフル・テンキー | 操作量が多い | 支払い | 押すたびにキーの並びが入れ替わる |
 | 叫ぶ | 社会的コストが高い | 全部 | 声の大きさが値（マイクの許可が必要） |
 
-不便さの分類は `docs/weird-ui-research.md` §6 の4分類による。
+不便さの分類は、ネタ出しの元にした調査記録の4分類（操作量が多い／精度が出ない／再現性がない／社会的コストが高い）による。
+調査記録そのものは手元にだけ置き、このリポジトリには含めていない。
 
 ### 入力欄の追加方法
 
@@ -102,6 +101,6 @@ open "http://localhost:8000/?only=my-controller&topic=date"  # お題の id: vol
 
 - ランチャー・ルーレット・押すたびランダム・全部ラジオボタンの原典:
   [ZeyuKeithFu/WorstVolumeControl](https://github.com/ZeyuKeithFu/WorstVolumeControl)（`VolumeLauncher.vue` はソースを取得して確認済み。他の3つは同リポジトリの一覧に基づく）
-- 物理スライダー・カーリング・16連サイコロ・円周率スクロール・空気入れ・叫ぶ・水準器は、`docs/weird-ui-research.md` §4 の作例カタログから
-- それ以外（UX Collective の記事、r/badUIbattles、User Inyerface など）は `docs/weird-ui-research.md` §8 に一覧がある。
-  ただし同 §9 のとおり検索スニペット経由の情報で、**一次確認は未実施**。引用する際は再確認が必要
+- 物理スライダー・カーリング・16連サイコロ・円周率スクロール・空気入れ・叫ぶ・水準器は、r/badUIbattles と元スレの作例カタログから
+- それ以外（UX Collective の記事、r/badUIbattles、User Inyerface など）の出典一覧は手元の調査記録にある。
+  ただし検索スニペット経由の情報で、**一次確認は未実施**。引用する際は再確認が必要
