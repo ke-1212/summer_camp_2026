@@ -14,6 +14,8 @@
   /* ============ 文字を画像にする ============ */
 
   /* 等倍（devicePixelRatio を無視）で描くので、スマホの高精細画面や拡大ではぼやける。
+     jpeg を指定すると低い画質の JPEG になり、文字のまわりに圧縮のにじみが出る。
+     up を 1 より大きくすると、実寸より大きく表示してさらに荒くする。
      alt は空のまま返すので、読み上げソフトにも検索にも引っかからない。
      Web フォントの読み込みが終わる前に描かれた画像は、本文と書体がずれる。 */
   const cache = new Map();
@@ -23,20 +25,25 @@
   function render(lines, o) {
     const font = o.weight + " " + o.size + "px " + o.family;
     ctx.font = font;
-    const w = Math.ceil(Math.max.apply(null, lines.map((t) => ctx.measureText(t).width))) + o.pad * 2;
+    if (o.ls) ctx.letterSpacing = o.ls;   // 対応していない環境では無視される
+    const w = Math.ceil(Math.max.apply(null, lines.map((t) => ctx.measureText(t).width))) + o.pad * 2 + (o.ls ? o.size : 0);
     const lh = Math.round(o.size * o.lh);
     const h = lh * lines.length + o.pad * 2;
     canvas.width = w;
     canvas.height = h;
     const c = canvas.getContext("2d");
-    if (o.bg) { c.fillStyle = o.bg; c.fillRect(0, 0, w, h); }
+    // JPEG は透明を扱えないので、下地の色を必ず塗る
+    const bg = o.bg || (o.jpeg ? "#FAF7F2" : "");
+    if (bg) { c.fillStyle = bg; c.fillRect(0, 0, w, h); }
     c.font = font;
+    if (o.ls) c.letterSpacing = o.ls;
     c.fillStyle = o.color;
     c.textBaseline = "middle";
     c.textAlign = o.align;
     const x = o.align === "center" ? w / 2 : o.align === "right" ? w - o.pad : o.pad;
     lines.forEach((t, i) => c.fillText(t, x, o.pad + lh * i + lh / 2));
-    return { url: canvas.toDataURL("image/png"), w, h };
+    const url = o.jpeg ? canvas.toDataURL("image/jpeg", o.jpeg) : canvas.toDataURL("image/png");
+    return { url, w, h };
   }
 
   /** 文字を画像の <img> にして HTML 文字列で返す */
@@ -44,14 +51,15 @@
     const o = Object.assign({
       size: 15, weight: "700", color: "#2B1B12", bg: "",
       family: '"Noto Sans JP", system-ui, sans-serif',
-      lh: 1.5, pad: 2, align: "left", cls: ""
+      lh: 1.5, pad: 2, align: "left", cls: "", jpeg: 0, up: 1, ls: ""
     }, opt || {});
     const lines = String(text).split("\n");
     const key = JSON.stringify([lines, o]);
     let m = cache.get(key);
     if (!m) { m = render(lines, o); cache.set(key, m); }
-    // width/height を実寸で指定する。CSS で伸ばされると、さらにぼやける
-    return '<img class="t ' + o.cls + '" src="' + m.url + '" width="' + m.w + '" height="' + m.h + '" alt="" draggable="false">';
+    // 実寸より up 倍に伸ばして表示する。伸ばすほど荒くなる
+    const w = Math.round(m.w * o.up), h = Math.round(m.h * o.up);
+    return '<img class="t ' + o.cls + '" src="' + m.url + '" width="' + w + '" height="' + h + '" alt="" draggable="false">';
   }
 
   /* ============ 通知とダイアログ ============ */
@@ -102,11 +110,12 @@
   }
 
   /* ============ 挿絵 ============
-     同梱の img/*.svg を使う。config.js の window.WAGOKORO_PHOTO_BASE に
-     フリー写真の配信元（例: https://picsum.photos/seed）を書くと、そちらを先に読み、
+     同梱の img/*.jpg（わざと小さく粗く焼いた画像。もとの絵は img/*.svg）を使う。
+     config.js の window.WAGOKORO_PHOTO_BASE にフリー写真の配信元
+     （例: https://picsum.photos/seed）を書くと、そちらを先に読み、
      読めなかったときだけ同梱の画像に戻す。 */
   function photo(name, w, h, cls) {
-    const local = "img/" + name + ".svg";
+    const local = "img/" + name + ".jpg";
     const base = String(window.WAGOKORO_PHOTO_BASE || "").replace(/\/$/, "");
     const src = base ? base + "/wagokoro-" + name + "/" + w + "/" + h : local;
     return '<img class="ph ' + (cls || "") + '" src="' + src + '" width="' + w + '" height="' + h +

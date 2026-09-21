@@ -1,1 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" width="320" height="240"><rect width="320" height="240" fill="#F3EDE2"/><path d="M84 52h152l12 160H72z" fill="#6B4527"/><path d="M84 52h152l6 26H78z" fill="#4A2F1B"/><rect x="100" y="96" width="120" height="76" rx="4" fill="#FBF6EC"/><rect x="112" y="112" width="96" height="8" fill="#B23A2A"/><rect x="112" y="130" width="72" height="6" fill="#C9BCA9"/><rect x="112" y="144" width="84" height="6" fill="#C9BCA9"/><ellipse cx="160" cy="224" rx="100" ry="10" fill="#E3D6C2"/><ellipse cx="256" cy="206" rx="13" ry="9" fill="#4A2F1B" transform="rotate(-18 256 206)"/><ellipse cx="278" cy="214" rx="13" ry="9" fill="#5A3A22" transform="rotate(12 278 214)"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" width="320" height="240">
+<defs>
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <filter id="soft"><feGaussianBlur stdDeviation="3.2"/></filter>
+  <filter id="soft2"><feGaussianBlur stdDeviation="7"/></filter>
+  <radialGradient id="vig" cx="50%" cy="46%" r="72%">
+    <stop offset="55%" stop-color="#000" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#1A1008" stop-opacity=".5"/>
+  </radialGradient>
+  <radialGradient id="lamp" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#FFE1A6" stop-opacity=".95"/>
+    <stop offset="100%" stop-color="#FFE1A6" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="bgz" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#EDE3D2"/><stop offset="100%" stop-color="#CFBFA6"/>
+  </linearGradient>
+</defs><rect width="320" height="240" fill="url(#bgz)"/><g filter="url(#soft)" opacity=".32"><ellipse cx="160" cy="212" rx="106" ry="15" fill="#6B5334"/></g><path d="M92 48h136l10 164H82z" fill="#5E4326"/><path d="M92 48h136l4 22H88z" fill="#2E1D10"/><path d="M104 60h112l6 140h-124z" fill="#6E5030" opacity=".45"/><rect x="108" y="92" width="104" height="82" rx="3" fill="#F5EEE0"/><rect x="120" y="106" width="80" height="7" fill="#8C2B1E"/><rect x="120" y="122" width="58" height="5" fill="#A89680"/><rect x="120" y="134" width="70" height="5" fill="#C2B5A2"/><rect x="120" y="152" width="34" height="10" fill="#8C2B1E" opacity=".5"/><g opacity=".95"><ellipse cx="252" cy="200" rx="15" ry="10" fill="#3A2415" transform="rotate(-18 252 200)"/><ellipse cx="274" cy="212" rx="15" ry="10" fill="#4A2F1B" transform="rotate(12 274 212)"/><ellipse cx="236" cy="216" rx="15" ry="10" fill="#2E1D10" transform="rotate(4 236 216)"/></g><rect width="320" height="240" fill="url(#vig)"/><rect width="320" height="240" filter="url(#grain)" opacity=".17"/></svg>

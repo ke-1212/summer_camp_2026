@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>珈琲 和ごころ｜Bad UI選手権</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Shippori+Mincho:wght@600;800&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Shippori+Mincho:wght@500;600;800&family=Jost:wght@300;400&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,28 +20,28 @@
     <button id="trophy" type="button">🏆 0/20</button>
   </div>
 
-  <!-- 店のヘッダー。文字はすべて画像、ナビはアイコンだけでラベルがない -->
+  <!-- 店のヘッダー。文字はすべて画像、ナビは英字だけ -->
+  <div class="topbar" id="topbar"></div>
   <header class="site-head" id="siteHead">
     <div class="head-row">
-      <button class="hamb" id="menuBtn" type="button">☰</button>
+      <button class="hamb" id="menuBtn" type="button">MENU ☰</button>
       <button class="logo" id="logo" type="button"></button>
-      <span class="sp"></span>
-      <button class="ic" id="cartBtn" type="button">🧾<span class="badge" id="cartBadge">0</span></button>
+      <button class="cart-link" id="cartBtn" type="button">CART (<span id="cartBadge">0</span>)</button>
     </div>
-    <nav class="icons" id="iconNav">
-      <button type="button" data-go="#shop">🫘</button>
-      <button type="button" data-go="#menu">📜</button>
-      <button type="button" data-go="#info">📍</button>
-      <button type="button" data-go="#top">🏠</button>
-      <button type="button" id="bgmBtn">🔊</button>
-      <button type="button" id="searchBtn">🔍</button>
+    <nav class="gnav" id="gnav">
+      <button type="button" data-go="#top">Home</button>
+      <button type="button" data-go="#about">About</button>
+      <button type="button" data-go="#menu">Menu</button>
+      <button type="button" data-go="#shop">Online Shop</button>
+      <button type="button" data-go="#news">News</button>
+      <button type="button" data-go="#info">Access</button>
+      <button type="button" id="searchBtn">Search</button>
     </nav>
   </header>
 
   <main id="view"></main>
 </div>
 
-<!-- 画面の下に居座る予約バナー。閉じるボタンだけが画像で小さい -->
 <div id="reserveBar" hidden></div>
 <div id="cookie" hidden></div>
 <div id="toast"></div>

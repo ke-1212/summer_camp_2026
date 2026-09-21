@@ -1,1 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" width="320" height="240"><rect width="320" height="240" fill="#F3EDE2"/><ellipse cx="160" cy="200" rx="86" ry="12" fill="#E3D6C2"/><path d="M96 96h128l-14 100H110z" fill="#FFFFFF"/><path d="M96 96h128l-4 26H100z" fill="#4A6B7A"/><path d="M224 116c36 0 36 42 0 42" fill="none" stroke="#FFFFFF" stroke-width="13"/><ellipse cx="160" cy="98" rx="64" ry="12" fill="#3A2415"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" width="320" height="240">
+<defs>
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <filter id="soft"><feGaussianBlur stdDeviation="3.2"/></filter>
+  <filter id="soft2"><feGaussianBlur stdDeviation="7"/></filter>
+  <radialGradient id="vig" cx="50%" cy="46%" r="72%">
+    <stop offset="55%" stop-color="#000" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#1A1008" stop-opacity=".5"/>
+  </radialGradient>
+  <radialGradient id="lamp" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#FFE1A6" stop-opacity=".95"/>
+    <stop offset="100%" stop-color="#FFE1A6" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="bgz" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#EDE3D2"/><stop offset="100%" stop-color="#CFBFA6"/>
+  </linearGradient>
+</defs><rect width="320" height="240" fill="url(#bgz)"/><g filter="url(#soft)" opacity=".32"><ellipse cx="160" cy="212" rx="106" ry="15" fill="#6B5334"/></g><path d="M100 92h120l-13 96H113z" fill="#F7F2E8"/><path d="M100 92h120l-4 24H104z" fill="#40626F"/><ellipse cx="160" cy="94" rx="60" ry="11" fill="#2A170C"/><path d="M220 112c34 0 34 40 0 40" fill="none" stroke="#F7F2E8" stroke-width="12"/><rect width="320" height="240" fill="url(#vig)"/><rect width="320" height="240" filter="url(#grain)" opacity=".17"/></svg>

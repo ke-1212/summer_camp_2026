@@ -1,1 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 640" width="480" height="640"><rect width="480" height="640" fill="#EFE6D6"/><rect x="8" y="8" width="464" height="624" fill="#FBF6EC" stroke="#E0D3BC" stroke-width="3"/><rect x="26" y="26" width="428" height="588" fill="none" stroke="#E7DCC8" stroke-width="2"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 660" width="480" height="660">
+<defs>
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <filter id="soft"><feGaussianBlur stdDeviation="3.2"/></filter>
+  <filter id="soft2"><feGaussianBlur stdDeviation="7"/></filter>
+  <radialGradient id="vig" cx="50%" cy="46%" r="72%">
+    <stop offset="55%" stop-color="#000" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#1A1008" stop-opacity=".5"/>
+  </radialGradient>
+  <radialGradient id="lamp" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#FFE1A6" stop-opacity=".95"/>
+    <stop offset="100%" stop-color="#FFE1A6" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="bgz" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#EDE3D2"/><stop offset="100%" stop-color="#CFBFA6"/>
+  </linearGradient>
+</defs><rect width="480" height="660" fill="#E7DCC6"/><rect x="10" y="10" width="460" height="640" fill="#F7F1E2"/><rect x="28" y="28" width="424" height="604" fill="none" stroke="#DCCFB4" stroke-width="2"/><g filter="url(#soft2)" opacity=".2"><rect x="300" y="0" width="180" height="660" fill="#A98F66"/></g><rect width="480" height="660" fill="url(#vig)"/><rect width="480" height="660" filter="url(#grain)" opacity=".17"/></svg>
