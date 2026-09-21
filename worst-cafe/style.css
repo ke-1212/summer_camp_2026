@@ -1,0 +1,404 @@
+/* ありふれた町のカフェの見た目にして、中身だけを最悪にする。
+   地の部分（ゲームの外枠や説明）は読みやすく作る。読めないと理不尽さが伝わらないため。 */
+:root {
+  --bg:    #F3EDE2;
+  --card:  #FFFDF8;
+  --ink:   #2B1B12;
+  --dim:   #8A7A6C;
+  --line:  #DFD3C1;
+  --brown: #5A3A22;   /* 店のブランド色 */
+  --deep:  #3A2415;
+  --matcha:#5B6B3A;
+  --accent:#2563EB;
+  --bad:   #B23A2A;
+  --gold:  #C8A24A;
+  --jp: "Noto Sans JP", system-ui, sans-serif;
+  --mincho: "Shippori Mincho", serif;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--jp);
+  overscroll-behavior-y: none;
+}
+
+#app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+p { margin: 0 0 12px; font-size: 14px; line-height: 1.8; }
+p:last-child { margin-bottom: 0; }
+.note { font-size: 12px; color: var(--dim); line-height: 1.7; }
+h2 { font-family: var(--mincho); font-size: 19px; margin: 0 0 10px; }
+
+label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+input[type="text"], select {
+  width: 100%;
+  padding: 11px 12px;
+  font: inherit;
+  font-size: 16px;            /* iOS で拡大されないように */
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #FFF;
+  color: var(--ink);
+}
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ============ 文字の画像 ============
+   等倍で描いた PNG をそのまま置く。選択もコピーも検索もできない。
+   .stretch を付けた画像は幅に合わせて伸ばすので、さらにぼやける。 */
+img.t {
+  display: inline-block;
+  vertical-align: middle;
+  max-width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+img.t.stretch { width: 100%; }
+img.t.block { display: block; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+.card + .card { margin-top: 12px; }
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 13px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 6px;
+  background: var(--brown);
+  color: #FFF;
+}
+.btn:disabled { background: #C3B4A6; }
+.btn.sub { background: var(--matcha); }
+.tiny-link { font-size: 10px; color: #A4988C; text-decoration: underline; padding: 2px; }
+.rows { display: grid; gap: 10px; }
+.err { color: var(--bad); font-size: 13px; font-weight: 700; margin-top: 8px; }
+
+/* ============ 通知 ============ */
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: 84px;
+  transform: translateX(-50%);
+  max-width: 92vw;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(43, 27, 18, .93);
+  color: #FFF;
+  font-size: 13px;
+  display: none;
+  z-index: 90;
+  pointer-events: none;   /* 通知がボタンの上に重なっても、操作を邪魔しない */
+}
+#toast.on { display: block; }
+
+#achv {
+  position: fixed;
+  left: 50%;
+  top: 44px;
+  transform: translate(-50%, calc(-100% - 60px));
+  max-width: 92vw;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--deep);
+  color: #FFE27A;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+  transition: transform .3s ease;
+  z-index: 95;
+  pointer-events: none;
+}
+#achv.on { transform: translate(-50%, 0); }
+
+/* ============ ゲームの外枠（サイトの一部ではない） ============ */
+#mission {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  background: #111827;
+  color: #E5E7EB;
+  font-size: 12px;
+  flex: none;
+}
+#mission .goal { flex: 1; min-width: 0; font-size: 11px; line-height: 1.5; color: #E5E7EB; text-align: left; display: grid; gap: 1px; }
+#mission .goal .next { color: #93C5FD; font-weight: 700; }
+#mission .goal b { color: #FFE27A; }
+#mission .clock { font-variant-numeric: tabular-nums; }
+#mission button { color: #FFE27A; font-size: 12px; font-weight: 700; padding: 2px 4px; }
+
+/* ============ 店のヘッダー ============ */
+.site-head {
+  background: var(--brown);
+  padding: 8px 10px 0;
+  flex: none;
+}
+.head-row { display: flex; align-items: center; gap: 8px; min-height: 40px; }
+.head-row .sp { flex: 1; }
+.hamb { color: #FFF; font-size: 18px; padding: 2px 6px; }
+.logo { padding: 0; line-height: 0; }
+.ic { color: #FFF; font-size: 19px; padding: 2px 6px; position: relative; }
+.ic .badge {
+  position: absolute; right: -2px; top: -4px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 8px; background: var(--gold); color: var(--deep);
+  font-size: 10px; font-weight: 900; line-height: 16px; text-align: center;
+}
+/* ラベルのないアイコンだけのナビ。押すまで行き先が分からない */
+.icons { display: flex; justify-content: space-between; padding: 4px 2px 6px; }
+.icons button { color: #F0E3D2; font-size: 17px; padding: 4px 6px; }
+
+#view { flex: 1; padding: 12px 12px 110px; }
+
+/* ============ トップ ============ */
+.hero { position: relative; height: 176px; border-radius: 8px; overflow: hidden; background: var(--deep); }
+.hero .slide {
+  position: absolute; inset: 0;
+  display: grid; place-items: center; text-align: center;
+  opacity: 0; transition: opacity .12s linear;
+  padding: 12px;
+}
+.hero .slide.on { opacity: 1; }
+.hero .dots { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 9px; color: rgba(255,255,255,.7); }
+
+.sec-title { margin: 20px 0 8px; }
+.band { background: var(--deep); border-radius: 8px; padding: 14px; text-align: center; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.tile { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 2px 8px; text-align: center; }
+.tile span { display: block; font-size: 26px; margin-bottom: 4px; }
+
+.hours { display: grid; gap: 0; }
+.hours .row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px dotted var(--line); }
+.hours .row:last-child { border-bottom: 0; }
+
+.newsrow { display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; border-bottom: 1px dotted var(--line); }
+.newsrow .d { flex: none; }
+.feed-loading { text-align: center; font-size: 12px; color: var(--dim); padding: 14px 0; }
+.feed-loading button { font-size: 9px; color: #BDB2A6; padding: 2px; }
+
+/* ============ メニュー（一枚の画像） ============ */
+.board { background: #FFFDF8; border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow: auto; }
+.board .inner { transform-origin: top left; transition: transform .15s ease; }
+.board-tools { display: flex; gap: 6px; align-items: center; justify-content: flex-end; margin-top: 8px; }
+.board-tools button { font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 3px 7px; color: var(--dim); }
+
+/* ============ 商品 ============ */
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.prod {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.prod .pic { aspect-ratio: 4 / 3; border-radius: 6px; background: #EFE7DA; display: grid; place-items: center; font-size: 38px; }
+.prod .nm { min-height: 40px; }
+
+.item-pic { aspect-ratio: 5 / 3; border-radius: 8px; background: #EFE7DA; display: grid; place-items: center; font-size: 72px; }
+.urgent { background: #FDF3E3; border: 1px solid #EBD9B8; border-radius: 6px; padding: 6px 8px; font-size: 11px; color: #8A5A16; margin-top: 8px; }
+.opt-row { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 400; margin: 10px 0 0; }
+.opt-row input { width: 16px; height: 16px; flex: none; }
+.buy-big {
+  display: block; width: 100%;
+  margin-top: 14px; padding: 16px;
+  border-radius: 6px; background: var(--bad); color: #FFF;
+  font-size: 17px; font-weight: 900;
+}
+.buy-small { display: block; width: 100%; margin-top: 8px; font-size: 11px; color: #9C9084; text-decoration: underline; padding: 4px; }
+
+/* 挽き方のスライダー。目盛りの文字は画像で、つまみは小さい */
+.grind { margin-top: 14px; }
+.grind input[type="range"] { width: 100%; }
+.grind .ticks { display: flex; justify-content: space-between; margin-top: 2px; }
+
+.review { border-top: 1px dotted var(--line); padding: 8px 0 0; margin-top: 8px; font-size: 12px; line-height: 1.7; }
+.stars { color: #E0A32A; font-size: 11px; }
+
+/* ============ カート・注文 ============ */
+.line { display: flex; gap: 10px; }
+.line .pic { width: 56px; height: 56px; flex: none; border-radius: 6px; background: #EFE7DA; display: grid; place-items: center; font-size: 26px; }
+.addon { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px dotted var(--line); margin-top: 8px; padding-top: 8px; font-size: 12px; }
+.addon button { font-size: 10px; color: #A4988C; text-decoration: underline; padding: 2px; }
+.sum { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; }
+
+/* 配送日。日付が画像のボタンで、押せる範囲が狭い */
+.days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.day { border: 1px solid var(--line); border-radius: 4px; background: #FFF; padding: 6px 0 4px; text-align: center; line-height: 0; }
+.day.on { border-color: var(--brown); background: #F6ECDD; box-shadow: inset 0 0 0 1px var(--brown); }
+.pays { display: grid; gap: 8px; margin-top: 4px; }
+.pay { display: flex; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 10px; font-size: 13px; background: #FFF; }
+.pay input { width: 16px; height: 16px; flex: none; }
+
+/* ============ 重ね表示 ============ */
+.layer {
+  position: fixed; inset: 0;
+  background: rgba(24, 16, 10, .55);
+  display: grid; place-items: center;
+  padding: 18px;
+  z-index: 100;
+}
+.pop {
+  background: var(--card);
+  border-radius: 10px;
+  padding: 18px;
+  width: 100%;
+  max-width: 340px;
+  max-height: 80dvh;
+  overflow: auto;
+}
+.pop .x { position: absolute; }
+.drawer {
+  background: var(--card);
+  width: 100%;
+  max-width: 320px;
+  max-height: 80dvh;
+  overflow: auto;
+  border-radius: 10px;
+  padding: 16px;
+}
+.drawer .row { display: block; width: 100%; text-align: left; padding: 10px 2px; border-bottom: 1px dotted var(--line); font-size: 13px; }
+
+#dialog {
+  position: fixed; inset: 0;
+  background: rgba(24, 16, 10, .55);
+  display: none; place-items: center;
+  padding: 18px;
+  z-index: 110;
+}
+#dialog.on { display: grid; }
+.dbox { background: var(--card); border-radius: 10px; padding: 18px; width: 100%; max-width: 340px; }
+.dtext { font-size: 14px; line-height: 1.8; margin-bottom: 14px; }
+.drow { display: grid; gap: 8px; }
+.dbtn { padding: 12px; border-radius: 6px; font-size: 14px; font-weight: 700; background: #EFE7DA; }
+.dbtn.yes { background: var(--bad); color: #FFF; font-size: 16px; padding: 15px; }
+.dbtn.no { background: none; color: #A4988C; font-size: 11px; text-decoration: underline; padding: 4px; }
+
+/* ============ 居座るバナーと Cookie ============ */
+#reserveBar {
+  position: fixed;
+  left: 50%; bottom: 0;
+  transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: var(--deep);
+  padding: 12px 34px 12px 14px;
+  z-index: 80;
+  display: flex; align-items: center; gap: 10px;
+}
+#reserveBar[hidden] { display: none; }
+#reserveBar .x { position: absolute; right: 4px; top: 4px; padding: 2px; line-height: 0; }
+
+#cookie {
+  position: fixed;
+  left: 50%; bottom: 0;
+  transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: #FFF;
+  border-top: 2px solid var(--brown);
+  padding: 14px;
+  z-index: 88;
+}
+#cookie[hidden] { display: none; }
+#cookie .agree { display: block; width: 100%; margin-top: 10px; padding: 15px; border-radius: 6px; background: var(--matcha); color: #FFF; font-size: 16px; font-weight: 900; }
+#cookie .settings { display: block; margin: 8px auto 0; padding: 2px; line-height: 0; opacity: .65; }
+
+/* ============ 説明画面・実績 ============ */
+.intro h2 { font-size: 20px; }
+.goal-box { border: 1px solid var(--line); border-left: 4px solid var(--brown); border-radius: 4px; padding: 10px 12px; margin: 12px 0; background: #FBF7EF; }
+.goal-box .lbl { font-size: 11px; font-weight: 900; color: var(--brown); margin-bottom: 4px; }
+.btn.start { margin-top: 12px; font-size: 17px; padding: 15px; }
+
+.ach-list { display: grid; gap: 6px; }
+.ach { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; font-weight: 700; color: var(--dim); }
+.ach.got { color: var(--ink); }
+.ach small { display: block; font-size: 11px; font-weight: 400; color: var(--dim); }
+
+.foot {
+  margin-top: 18px;
+  background: var(--deep);
+  border-radius: 8px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+.foot button { line-height: 0; padding: 2px; }
+.foot .cr { font-size: 11px; color: #A99887; }
+
+/* ============ ランキングの表 ============ */
+table.rank { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.rank td { padding: 5px 4px; border-bottom: 1px dotted var(--line); }
+table.rank td:first-child { width: 2em; color: var(--dim); }
+table.rank td:nth-child(3), table.rank td:nth-child(4) { text-align: right; font-variant-numeric: tabular-nums; }
+table.rank tr.me { background: #FBF1DE; font-weight: 700; }
+
+/* ============ 挿絵 ============ */
+img.ph { display: block; max-width: 100%; user-select: none; }
+.prod .pic, .item-pic, .shot { overflow: hidden; background: #EFE7DA; }
+.prod .pic img.ph, .item-pic img.ph, .shot img.ph { width: 100%; height: 100%; object-fit: cover; }
+.item-pic { display: block; }
+.shot { position: relative; border-radius: 8px; aspect-ratio: 16 / 9; }
+.shot .cap { position: absolute; left: 10px; bottom: 8px; }
+
+/* 看板は写真の上に文字の画像を重ねる。写真の柄と重なって読みにくい */
+.hero .slide img.ph { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hero .slide .cap { position: relative; z-index: 1; text-align: center; }
+.hero .slide::after { content: ""; position: absolute; inset: 0; background: rgba(43,27,18,.35); }
+.hero .slide .cap { text-shadow: 0 1px 6px rgba(0,0,0,.4); }
+.hero .slide .cap img.t { position: relative; z-index: 2; }
+
+/* 紙のお品書き。少し傾いていて、写真で撮ったように見える */
+.sheet {
+  background: url("img/paper.svg") center / 100% 100% no-repeat;
+  padding: 20px 16px;
+  transform: rotate(-1deg);
+  display: inline-block;
+}
+
+/* ============ 面白アクション ============ */
+.meter { height: 14px; border-radius: 7px; background: #E7DCC8; overflow: hidden; margin: 10px 0 4px; }
+.meter i { display: block; height: 100%; width: 0; background: var(--matcha); transition: width .08s linear; }
+.press {
+  display: block; width: 100%;
+  padding: 18px; border-radius: 8px;
+  background: var(--brown); color: #FFF;
+  font-size: 16px; font-weight: 900;
+  position: relative; overflow: hidden;
+  touch-action: none;
+}
+.press i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(255,255,255,.22); }
+.press span { position: relative; }
+/* 確認コードの画像。わざと歪ませて読みにくくする */
+.code {
+  background: #EFE7DA;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: inline-block;
+  line-height: 0;
+}
+.code img.t { filter: blur(.7px) contrast(.82); transform: skewX(-7deg) rotate(-1.5deg); }
+.shout-lv { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }

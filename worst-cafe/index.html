@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>珈琲 和ごころ｜Bad UI選手権</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Shippori+Mincho:wght@600;800&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- ゲームの外枠（サイトの一部ではない） -->
+  <div id="mission">
+    <button class="goal" id="missionBtn" type="button">
+      <span>ミッション: <b>朝霧ブレンド 200g を1袋だけ買う</b></span>
+      <span class="next" id="missionNext">次: オンラインストアを開く</span>
+    </button>
+    <span class="clock" id="clock">⏱ 00:00</span>
+    <button id="trophy" type="button">🏆 0/20</button>
+  </div>
+
+  <!-- 店のヘッダー。文字はすべて画像、ナビはアイコンだけでラベルがない -->
+  <header class="site-head" id="siteHead">
+    <div class="head-row">
+      <button class="hamb" id="menuBtn" type="button">☰</button>
+      <button class="logo" id="logo" type="button"></button>
+      <span class="sp"></span>
+      <button class="ic" id="cartBtn" type="button">🧾<span class="badge" id="cartBadge">0</span></button>
+    </div>
+    <nav class="icons" id="iconNav">
+      <button type="button" data-go="#shop">🫘</button>
+      <button type="button" data-go="#menu">📜</button>
+      <button type="button" data-go="#info">📍</button>
+      <button type="button" data-go="#top">🏠</button>
+      <button type="button" id="bgmBtn">🔊</button>
+      <button type="button" id="searchBtn">🔍</button>
+    </nav>
+  </header>
+
+  <main id="view"></main>
+</div>
+
+<!-- 画面の下に居座る予約バナー。閉じるボタンだけが画像で小さい -->
+<div id="reserveBar" hidden></div>
+<div id="cookie" hidden></div>
+<div id="toast"></div>
+<div id="achv"></div>
+<div id="dialog"><div class="dbox" id="dialogBox"></div></div>
+
+<script src="config.js"></script>
+<script src="kit.js"></script>
+<script src="site.js"></script>
+</body>
+</html>

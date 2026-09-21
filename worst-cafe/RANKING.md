@@ -16,7 +16,7 @@
 6. [`config.js`](config.js) を開き、URL を貼る。
 
    ```js
-   window.YASUINE_RANKING_URL = "https://script.google.com/macros/s/……/exec";
+   window.WAGOKORO_RANKING_URL = "https://script.google.com/macros/s/……/exec";
    ```
 
 7. 変更を push すると、GitHub Pages 側にも反映される。
@@ -28,7 +28,7 @@
 
 ## 仕様
 
-- 保存される内容: 日時・ニックネーム（12文字まで）・所要秒数・支払総額・実績数・ミッション成功かどうか。
+- 保存される内容: 日時・ニックネーム（12文字まで）・所要秒数・お支払い総額・実績数・ミッション成功かどうか。
 - 個人情報は保存しません。ニックネームは参加者が自分で入力したものだけです。
 - 記録の取得・送信はすべて非同期で行うため、通信が遅くてもゲームは止まりません。
 - 送信に失敗した場合も、記録はその端末の `localStorage` に残ります。
