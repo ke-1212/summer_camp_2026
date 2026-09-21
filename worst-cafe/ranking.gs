@@ -1,4 +1,4 @@
-/* ヤスイネ.com の共有ランキング用 Google Apps Script。
+/* 珈琲 和ごころ の共有ランキング用 Google Apps Script。
    スプレッドシートに紐づけて「ウェブアプリ」としてデプロイする（手順は RANKING.md）。
    - GET  ?action=list        記録を JSON で返す（?callback= を付けると JSONP）
    - POST 本文が JSON        1行追記する */
