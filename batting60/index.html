@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>バッティング60 得点シミュレーター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Barlow+Condensed:ital,wght@1,700;1,800&display=swap" rel="stylesheet">
+<script>
+/* ================= 設定（ここだけ書き換えてください） ================= */
+const CONFIG = {
+  // 記録用Googleフォーム（投票用とは別に新しく作ったもの）の formResponse URL
+  // 例: "https://docs.google.com/forms/d/e/1FAIpQLSxxxxxxxx/formResponse"
+  LOG_FORM: "https://docs.google.com/forms/d/e/1FAIpQLScbZIUDMCCaBXpPly12tSA_2btu6FDhSR70WxXsdBlyGQ1Bkw/formResponse",
+  ENTRY: {
+    name:    "entry.983643245",  // 名前
+    number:  "entry.1275982873",  // 数字
+    number2: "entry.632704215",  // 2つ目の数字
+    item:    "entry.489943450",  // アイテム
+    chips:   "entry.1508218704",  // 手持ちチップ
+  },
+  ORGANIZER: "あやちゃ",
+};
+/* ==================================================================== */
+const ITEMS = [
+  { id:"none",   name:"使わない",     price:0 },
+  { id:"f_ins",  name:"保険（無料）", price:0,   free:true },
+  { id:"f_bet",  name:"勝負手（無料）", price:0, free:true },
+  { id:"ins",    name:"保険",         price:50 },
+  { id:"double", name:"ダブルベット", price:70 },
+  { id:"scout",  name:"スカウター",   price:80 },
+  { id:"x2",     name:"倍化",         price:110 },
+  { id:"first",  name:"先取権",       price:130 },
+];
+</script>
+<style>
+:root{--bg:#0a0a0c;--panel:#141417;--line:#2a2a30;--ink:#f4f4f5;--mute:#9a9aa3;--red:#ff2e3a;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;line-height:1.6;
+  background-image:radial-gradient(ellipse 70% 40% at 100% 0%,#2a0a0d 0%,transparent 70%);background-attachment:fixed}
+.wrap{max-width:560px;margin:0 auto;padding:20px 18px 60px}
+.num{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-style:italic;font-weight:800}
+header{padding:8px 0 16px;border-bottom:2px solid var(--red)}
+h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1}
+h1 .num{color:var(--red);font-size:40px;margin-left:2px}
+header p{margin:8px 0 0;font-size:13px;color:var(--mute)}
+section{margin-top:24px}
+h2{font-size:15px;font-weight:700;margin:0 0 10px}
+h2 small{font-weight:400;color:var(--mute);margin-left:6px}
+input[type=text],input[type=number]{width:100%;background:var(--panel);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:17px;padding:12px 14px;border-radius:8px}
+input:focus{outline:2px solid var(--red);outline-offset:1px;border-color:transparent}
+.two{display:grid;grid-template-columns:1.4fr 1fr;gap:10px}
+.two label{font-size:12px;color:var(--mute);display:block;margin-bottom:4px}
+.pick{display:flex;gap:10px;margin-bottom:12px}
+.slot{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer;text-align:left;color:var(--ink);font:inherit;min-height:88px}
+.slot .lbl{font-size:12px;color:var(--mute)}
+.slot .v{font-size:54px;line-height:1;display:block;margin-top:2px}
+.slot .v.empty{color:#3a3a42}
+.slot.active{border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red)}
+.slot[hidden]{display:none}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.cell{aspect-ratio:1.15;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:#d4d4d8;font-size:22px;cursor:pointer;padding:0}
+.cell:active{transform:scale(.94)}
+.cell.on{background:var(--red);border-color:var(--red);color:#fff}
+.cell.on2{background:transparent;border:2px solid var(--red);color:var(--red)}
+button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
+.chip .pr{color:var(--mute);margin-left:6px;font-size:12px}
+.chip.on{background:var(--red);border-color:var(--red)}
+.chip.on .pr{color:#ffd6d8}
+.go{width:100%;margin-top:22px;background:var(--red);color:#fff;border:0;border-radius:8px;font:inherit;font-weight:900;font-size:17px;padding:15px;cursor:pointer}
+.go:disabled{background:#333;color:#777;cursor:not-allowed}
+.notice{font-size:11px;color:#4a4a52;margin:8px 0 0;text-align:center}
+.warn{color:var(--red);font-size:13px;margin-top:8px;min-height:1em}
+#result{margin-top:28px}
+#result[hidden]{display:none}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:10px 6px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--mute);font-weight:400}
+td .num{font-size:30px;line-height:1}
+td.pt .num{color:var(--red)}
+.foot{font-size:12.5px;color:var(--mute);margin-top:10px}
+iframe{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>バッティング<span class="num">60</span></h1>
+    <p>数字とアイテムを入れると、被った・被らなかった場合の得点と翌日のチップを計算します。</p>
+  </header>
+
+  <section>
+    <div class="two">
+      <div><label for="name">名前</label><input type="text" id="name" maxlength="30"></div>
+      <div><label for="have">今のチップ</label><input type="number" id="have" inputmode="numeric" min="0" value="100"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>数字 <small>1〜60</small></h2>
+    <div class="pick">
+      <button type="button" class="slot active" id="slot1"><span class="lbl">数字</span><span class="v num empty" id="v1">—</span></button>
+      <button type="button" class="slot" id="slot2" hidden><span class="lbl">2つ目（ダブルベット）</span><span class="v num empty" id="v2">—</span></button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section>
+    <h2>アイテム</h2>
+    <div class="chips" id="items"></div>
+  </section>
+
+  <button type="button" class="go" id="calc" disabled>計算する</button>
+  <p class="notice">入力内容は主催者に共有されます</p>
+  <div class="warn" id="warn"></div>
+
+  <section id="result" hidden>
+    <h2>計算結果</h2>
+    <table><thead><tr><th>ケース</th><th>得点</th><th>翌日のチップ</th></tr></thead><tbody id="rows"></tbody></table>
+    <p class="foot" id="foot"></p>
+  </section>
+</div>
+
+<form id="lf" method="POST" target="sink" hidden></form>
+<iframe name="sink" title="記録"></iframe>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const st = { n1:null, n2:null, slot:1, item:"none" };
+  const it = () => ITEMS.find(i => i.id === st.item);
+  const store = { get(k){try{return localStorage.getItem("b60:"+k)}catch{return null}}, set(k,v){try{localStorage.setItem("b60:"+k,v)}catch{}} };
+  $("name").value = store.get("name") || "";
+  $("have").value = store.get("have") || 100;
+
+  const grid = $("grid");
+  for (let i=1;i<=60;i++){ const b=document.createElement("button"); b.type="button"; b.className="cell num"; b.textContent=i; b.dataset.n=i; grid.appendChild(b); }
+  grid.onclick = e => {
+    const b = e.target.closest(".cell"); if(!b) return; const n=+b.dataset.n;
+    if (st.slot===1){ st.n1 = st.n1===n?null:n; if(st.n2===st.n1) st.n2=null; if(st.item==="double"&&st.n1&&!st.n2) st.slot=2; }
+    else { if(n===st.n1) return; st.n2 = st.n2===n?null:n; }
+    render();
+  };
+  $("slot1").onclick=()=>{st.slot=1;render()}; $("slot2").onclick=()=>{st.slot=2;render()};
+
+  ITEMS.forEach(x => { const b=document.createElement("button"); b.type="button"; b.className="chip"; b.dataset.id=x.id;
+    b.innerHTML=`<span></span>${x.price?`<span class="pr">${x.price}</span>`:""}`; b.firstChild.textContent=x.name; $("items").appendChild(b); });
+  $("items").onclick = e => { const b=e.target.closest(".chip"); if(!b) return; st.item=b.dataset.id;
+    if(st.item!=="double"){st.n2=null;st.slot=1} else if(st.n1&&!st.n2) st.slot=2; render(); };
+  $("name").oninput = render; $("have").oninput = render;
+
+  function render(){
+    const dbl = st.item==="double";
+    $("slot2").hidden=!dbl; if(!dbl) st.slot=1;
+    $("slot1").classList.toggle("active",dbl&&st.slot===1); $("slot2").classList.toggle("active",dbl&&st.slot===2);
+    [["v1",st.n1],["v2",st.n2]].forEach(([id,v])=>{ $(id).textContent=v??"—"; $(id).classList.toggle("empty",!v); });
+    grid.querySelectorAll(".cell").forEach(c=>{const n=+c.dataset.n; c.classList.toggle("on",n===st.n1); c.classList.toggle("on2",n===st.n2);});
+    $("items").querySelectorAll(".chip").forEach(b=>b.classList.toggle("on",b.dataset.id===st.item));
+    const have=+$("have").value||0; let w="";
+    if(!$("name").value.trim()) w="名前を入力してください";
+    else if(!st.n1) w="数字を選んでください";
+    else if(dbl&&!st.n2) w="2つ目の数字を選んでください";
+    else if(it().price>have) w=`チップが足りません（${it().price}必要）`;
+    $("warn").textContent = w; $("calc").disabled = !!w;
+  }
+
+  function cases(){
+    const n=st.n1, m=st.n2, c3=x=>Math.ceil(x/3);
+    switch(st.item){
+      case "f_ins": case "ins": return [["被らない",n],["被った",c3(n)]];
+      case "f_bet": return [["被らない",n+10],["被った",0]];
+      case "double": return [["両方無事",Math.min(n,m)],[`${n}だけ無事`,n],[`${m}だけ無事`,m],["両方被った",0]];
+      case "x2": return [["被らない",n*2],["被った",0]];
+      case "first": return [["先取権は自分だけ",n],["先取権が2人",Math.ceil(n/2)],["先取権が3人",Math.ceil(n/3)]];
+      default: return [["被らない",n],["被った",0]];
+    }
+  }
+
+  $("calc").onclick = () => {
+    const have=+$("have").value||0, x=it(), name=$("name").value.trim();
+    store.set("name",name); store.set("have",String(have));
+    $("rows").innerHTML = cases().map(([k,p])=>{
+      const next = have - x.price + 20 + (p===0?30:0);
+      return `<tr><td>${k}</td><td class="pt"><span class="num">${p}</span></td><td><span class="num">${next}</span></td></tr>`;
+    }).join("");
+    const notes = { scout:"22:00の締切後に被っているか教えてもらえます。変更は22:15までにDMで。",
+      f_ins:"無料の保険はイベント中1回だけです。", f_bet:"無料の勝負手はイベント中1回だけです。",
+      first:"先取権を使っていない同じ数字の人は0点になります。" };
+    $("foot").textContent = [notes[x.id]||"", "翌日のチップ＝今のチップ − アイテム代 ＋20（0点の日は さらに＋30）。余ったチップは10枚＝1点で最終得点に加算されます。"].filter(Boolean).join(" ");
+    $("result").hidden=false; $("result").scrollIntoView({behavior:"smooth",block:"start"});
+
+    if (CONFIG.LOG_FORM){
+      const f=$("lf"); f.innerHTML=""; f.action=CONFIG.LOG_FORM;
+      const add=(k,v)=>{const i=document.createElement("input");i.type="hidden";i.name=k;i.value=v;f.appendChild(i)};
+      add(CONFIG.ENTRY.name,name); add(CONFIG.ENTRY.number,String(st.n1));
+      if(st.item==="double") add(CONFIG.ENTRY.number2,String(st.n2));
+      add(CONFIG.ENTRY.item,x.name); add(CONFIG.ENTRY.chips,String(have));
+      f.submit();
+    }
+  };
+  render();
+})();
+</script>
+</body>
+</html>
