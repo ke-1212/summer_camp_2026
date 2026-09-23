@@ -1,1 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" width="320" height="240"><rect width="320" height="240" fill="#F3EDE2"/><path d="M120 48h80l-10 156h-60z" fill="#BFD3D9"/><path d="M126 60h68l-8 42h-52z" fill="#FFFFFF" opacity=".7"/><rect x="114" y="36" width="92" height="16" rx="8" fill="#4A2F1B"/><rect x="152" y="8" width="14" height="32" rx="7" fill="#B23A2A"/><ellipse cx="160" cy="210" rx="72" ry="9" fill="#E3D6C2"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" width="320" height="240">
+<defs>
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <filter id="soft"><feGaussianBlur stdDeviation="3.2"/></filter>
+  <filter id="soft2"><feGaussianBlur stdDeviation="7"/></filter>
+  <radialGradient id="vig" cx="50%" cy="46%" r="72%">
+    <stop offset="55%" stop-color="#000" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#1A1008" stop-opacity=".5"/>
+  </radialGradient>
+  <radialGradient id="lamp" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#FFE1A6" stop-opacity=".95"/>
+    <stop offset="100%" stop-color="#FFE1A6" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="bgz" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#EDE3D2"/><stop offset="100%" stop-color="#CFBFA6"/>
+  </linearGradient>
+</defs><rect width="320" height="240" fill="url(#bgz)"/><g filter="url(#soft)" opacity=".32"><ellipse cx="160" cy="212" rx="106" ry="15" fill="#6B5334"/></g><path d="M124 44h72l-9 152h-54z" fill="#C4D3D6"/><path d="M130 56h60l-7 44h-46z" fill="#FFFFFF" opacity=".55"/><rect x="118" y="32" width="84" height="15" rx="7" fill="#2A170C"/><rect x="152" y="6" width="13" height="30" rx="6" fill="#8C2B1E"/><rect width="320" height="240" fill="url(#vig)"/><rect width="320" height="240" filter="url(#grain)" opacity=".17"/></svg>

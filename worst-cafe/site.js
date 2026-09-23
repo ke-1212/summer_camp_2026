@@ -16,11 +16,24 @@
   const { $, clamp, esc, yen, mmss, imgText, photo, toast, ask, closeDialog, layer, listeners, loop, longPress, MIC } = KIT;
   const params = new URLSearchParams(location.search);
 
-  /* 画像の文字を作る道具。見出しは明朝、本文はゴシックで、本文の地の文とは書体が揃わない */
-  const ti = (s, o) => imgText(s, o);
-  const th = (s, o) => imgText(s, Object.assign({ size: 19, weight: "800", family: '"Shippori Mincho", serif' }, o));
-  const tp = (v) => imgText(yen(v), { size: 17, weight: "900", color: "#B23A2A" });
-  const tw = (s, o) => imgText(s, Object.assign({ color: "#F6EFE3" }, o));   // 濃い背景の上の文字
+  /* 画像の文字を作る道具。
+     明るい地の上では JPEG にして輪郭をにじませ、up でわずかに伸ばしてさらに粗くする。
+     濃い地の上に重ねる文字は透過が必要なので PNG のままにする。 */
+  const MIN = '"Shippori Mincho", "Hiragino Mincho ProN", serif';
+  const EN  = '"Jost", "Helvetica Neue", sans-serif';
+  const GO  = '"Noto Sans JP", system-ui, sans-serif';
+  // 本文の文字
+  const ti = (s, o) => imgText(s, Object.assign({ size: 12, weight: "400", color: "#23201C", family: GO, lh: 1.95, jpeg: .4, up: 1.15 }, o));
+  // 明朝の見出し
+  const th = (s, o) => imgText(s, Object.assign({ size: 19, weight: "600", color: "#23201C", family: MIN, lh: 1.7, ls: ".08em", jpeg: .45, up: 1.15 }, o));
+  // 英字の小さなラベル
+  const ten = (s, o) => imgText(s, Object.assign({ size: 10, weight: "400", color: "#8B8175", family: EN, ls: ".3em", jpeg: .5, up: 1.1 }, o));
+  // 値段
+  const tp = (v, o) => imgText(typeof v === "number" ? yen(v) : v, Object.assign({ size: 15, weight: "500", color: "#23201C", family: GO, jpeg: .4, up: 1.15 }, o));
+  // 濃い地の上に重ねる文字
+  const tw = (s, o) => imgText(s, Object.assign({ size: 12, weight: "500", color: "#F6F1E7", family: GO, lh: 1.85, up: 1.2 }, o));
+  // 縦書き。1文字ずつ縦に並べた画像なので、選択も読み上げも折り返しもできない
+  const tvert = (s, o) => imgText(s.split("").join("\n"), Object.assign({ size: 21, weight: "600", color: "#F6F1E7", family: MIN, align: "center", lh: 1.4, up: 1.2 }, o));
 
   /* ============ 実績 ============ */
   const ACH = [
@@ -80,23 +93,41 @@
      名前が画像なので、見分けのつきにくい名前を並べても検索で絞り込めない。 */
   const TARGET = "asagiri200";
   const PRODUCTS = [
-    { id: "pr1", pr: true, name: "【おすすめ】自家焙煎 福袋（豆 1kg）", price: 7800, was: 12000, img: "fukubukuro", cat: "雑貨" },
-    { id: "pr2", pr: true, name: "【おすすめ】和ごころ オリジナルタンブラー", price: 2800, was: 3800, img: "tumbler", cat: "雑貨" },
-    { id: "asagiriEX", name: "朝霧ブレンド EX 200g（新）", price: 2480, was: 2980, img: "bag-asagiri", cat: "豆" },
-    { id: "asagiri500", name: "朝霧ブレンド 500g", price: 3200, was: 3800, img: "bag-asagiri", cat: "豆" },
-    { id: "asagiriBox", name: "朝霧ブレンド 200g 化粧箱入り", price: 2480, was: 2900, img: "box", cat: "豆" },
-    { id: "asagiri2", name: "朝霧ブレンド 200g ×2袋セット", price: 2780, was: 2960, img: "bag-asagiri", cat: "豆" },
-    { id: "yuuhi200", name: "夕陽ブレンド 200g", price: 1580, was: 1800, img: "bag-yuuhi", cat: "豆" },
-    { id: "sumibi", name: "深煎り 炭火仕立て 200g", price: 1680, was: 1900, img: "bag-sumibi", cat: "豆" },
-    { id: "asagiri100", name: "朝霧ブレンド 100g", price: 880, was: 980, img: "bag-asagiri", cat: "豆" },
-    { id: TARGET, name: "朝霧ブレンド 200g", price: 1480, was: 1800, img: "bag-asagiri", cat: "豆" },
-    { id: "drip10", name: "ドリップバッグ 10個入り", price: 1280, was: 1500, img: "box", cat: "豆" },
-    { id: "tumbler", name: "和ごころ オリジナルタンブラー", price: 2800, was: 3800, img: "tumbler", cat: "雑貨" },
-    { id: "cup", name: "美濃焼 コーヒーカップ", price: 3600, was: 4200, img: "cup", cat: "雑貨" },
-    { id: "filter", name: "ペーパーフィルター 100枚", price: 480, was: 600, img: "filter", cat: "雑貨" },
-    { id: "youkan", name: "自家製 珈琲羊羹（5本）", price: 1200, was: 1400, img: "youkan", cat: "菓子" },
-    { id: "cookie", name: "珈琲クッキー 8枚", price: 980, was: 1200, img: "cookie", cat: "菓子" }
+    { id: "pr1", pr: true, name: "自家焙煎 福袋 1kg", en: "LUCKY BAG 1KG", price: 7800, roast: 4,
+      origin: "ブラジル / コロンビア", note: "ナッツ、カカオ、余韻の甘み", img: "fukubukuro", cat: "豆" },
+    { id: "pr2", pr: true, name: "和ごころ タンブラー", en: "ORIGINAL TUMBLER", price: 2800, roast: 0,
+      origin: "日本製", note: "真空二重構造", img: "tumbler", cat: "雑貨" },
+    { id: "asagiriEX", name: "朝霧ブレンド EX 200g", en: "ASAGIRI BLEND EX 200G", price: 2480, roast: 3,
+      origin: "エチオピア / ブラジル", note: "ベリー、黒糖、ミルクチョコレート", img: "bag-asagiri", cat: "豆" },
+    { id: "asagiri500", name: "朝霧ブレンド 500g", en: "ASAGIRI BLEND 500G", price: 3200, roast: 3,
+      origin: "エチオピア / ブラジル", note: "ベリー、黒糖、ミルクチョコレート", img: "bag-asagiri", cat: "豆" },
+    { id: "asagiriBox", name: "朝霧ブレンド 200g 化粧箱入", en: "ASAGIRI BLEND GIFT BOX", price: 2480, roast: 3,
+      origin: "エチオピア / ブラジル", note: "ベリー、黒糖、ミルクチョコレート", img: "box", cat: "豆" },
+    { id: "asagiri2", name: "朝霧ブレンド 200g ×2袋", en: "ASAGIRI BLEND 200G x2", price: 2780, roast: 3,
+      origin: "エチオピア / ブラジル", note: "ベリー、黒糖、ミルクチョコレート", img: "bag-asagiri", cat: "豆" },
+    { id: "yuuhi200", name: "夕陽ブレンド 200g", en: "YUUHI BLEND 200G", price: 1580, roast: 4,
+      origin: "グアテマラ / タンザニア", note: "アーモンド、オレンジ、はちみつ", img: "bag-yuuhi", cat: "豆" },
+    { id: "sumibi", name: "深煎り 炭火仕立て 200g", en: "SUMIBI DARK ROAST 200G", price: 1680, roast: 5,
+      origin: "インドネシア / ブラジル", note: "ビターチョコ、杉、スモーク", img: "bag-sumibi", cat: "豆" },
+    { id: "asagiri100", name: "朝霧ブレンド 100g", en: "ASAGIRI BLEND 100G", price: 880, roast: 3,
+      origin: "エチオピア / ブラジル", note: "ベリー、黒糖、ミルクチョコレート", img: "bag-asagiri", cat: "豆" },
+    { id: TARGET, name: "朝霧ブレンド 200g", en: "ASAGIRI BLEND 200G", price: 1480, roast: 3,
+      origin: "エチオピア / ブラジル", note: "ベリー、黒糖、ミルクチョコレート", img: "bag-asagiri", cat: "豆" },
+    { id: "drip10", name: "ドリップバッグ 10個入", en: "DRIP BAG SET OF 10", price: 1280, roast: 3,
+      origin: "ブレンド", note: "お湯を注ぐだけ", img: "box", cat: "豆" },
+    { id: "tumbler", name: "和ごころ タンブラー", en: "ORIGINAL TUMBLER", price: 2800, roast: 0,
+      origin: "日本製", note: "真空二重構造", img: "tumbler", cat: "雑貨" },
+    { id: "cup", name: "美濃焼 珈琲碗皿", en: "MINO WARE CUP & SAUCER", price: 3600, roast: 0,
+      origin: "岐阜 / 多治見", note: "職人の手仕事", img: "cup", cat: "雑貨", soldout: true },
+    { id: "filter", name: "ペーパーフィルター 100枚", en: "PAPER FILTER 100", price: 480, roast: 0,
+      origin: "日本製", note: "2〜4人用", img: "filter", cat: "雑貨" },
+    { id: "youkan", name: "自家製 珈琲羊羹 5本", en: "COFFEE YOKAN SET OF 5", price: 1200, roast: 0,
+      origin: "自家製", note: "深煎りの余韻", img: "youkan", cat: "菓子" },
+    { id: "cookie", name: "珈琲クッキー 8枚", en: "COFFEE COOKIE 8PCS", price: 980, roast: 0,
+      origin: "自家製", note: "珈琲豆入り", img: "cookie", cat: "菓子", soldout: true }
   ];
+  /** 焙煎度合いの点。何段階なのかは、どこにも書いていない */
+  const roastDots = (n) => "●".repeat(n) + "○".repeat(Math.max(0, 5 - n));
   const P = (id) => PRODUCTS.find((p) => p.id === id);
   const ADDONS = {
     gift: { name: "ギフト包装", price: 330 },
@@ -268,30 +299,45 @@
     return text.slice(0, cut).trim() + "\n" + text.slice(cut).trim();
   }
 
-  /* 商品のカード。名前も価格も画像なので、目で探すしかない */
+  /** 英字のラベルと明朝の見出しを重ねた、セクションの頭 */
+  const secHead = (en, jp) =>
+    '<span class="sec-label">' + ten(en) + "</span>" +
+    '<span class="sec-head">' + th(jp) + "</span>";
+
+  /* 商品のカード。名前も値段も画像で、似た名前の商品が同じ絵で並ぶ */
   const prodCard = (p) =>
     '<button class="prod" type="button" data-go="#item/' + p.id + '">' +
     '<span class="pic">' + photo(p.img, 240, 180) + "</span>" +
-    '<span class="nm">' + ti(wrap(p.name, 12), { size: 12, weight: "500" }) + "</span>" +
-    "<span>" + tp(p.price) + "</span>" +
-    "<span>" + ti("税込・送料別", { size: 8, color: "#A4988C", weight: "400" }) + "</span></button>";
+    (p.soldout ? '<span class="soldout">SOLD OUT</span>' : "") +
+    '<span class="nm">' + ti(wrap(p.name, 11), { size: 11.5, lh: 1.8 }) + "</span>" +
+    (p.roast ? '<span class="roast">' + roastDots(p.roast) + "</span>" : "") +
+    "<span>" + tp(p.price, { size: 13 }) + "</span></button>";
 
-  /** 看板の1枚。写真の上に文字の画像を重ねるので、柄と重なって読みにくい */
-  const slide = (name, text, size, on) =>
-    '<div class="slide' + (on ? " on" : "") + '">' + photo(name, 640, 360) +
-    '<span class="cap">' + tw(text, { size, weight: "800", family: '"Shippori Mincho", serif', align: "center" }) + "</span></div>";
+  /** 看板の1枚。写真の上に文字の画像を重ねる */
+  const slide = (name, on) => '<div class="slide' + (on ? " on" : "") + '">' + photo(name, 640, 360) + "</div>";
+
+  /** スクロールでゆっくり出てくる。実サイトにもよくある演出で、ここでは少し遅すぎる */
+  function fadeIn(root) {
+    const items = root.querySelectorAll(".fade");
+    if (!items.length) return () => {};
+    const io = new IntersectionObserver((es) => {
+      es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { rootMargin: "-40px 0px -10% 0px" });
+    items.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }
 
   const NEWS = [
-    "本日のおすすめは朝霧ブレンドです。",
-    "臨時休業のお知らせ（詳細は店頭の掲示をご覧ください）",
-    "焙煎機の点検にともない発送が遅れます。",
-    "駐車場は近隣のコインパーキングをご利用ください。",
-    "スタンプカードは紙のみのお取り扱いです。",
-    "店内はキャッシュレス決済に対応しておりません。",
-    "季節の珈琲羊羹が入荷しました。",
-    "お席のご予約はお電話のみ承ります。",
-    "インスタグラムは現在更新を停止しています。",
-    "公式アプリの配信は終了しました。"
+    ["2026.09.21", "本日のおすすめは朝霧ブレンドです。"],
+    ["2026.09.19", "臨時休業のお知らせ（詳細は店頭の掲示をご覧ください）"],
+    ["2026.09.14", "焙煎機の点検にともない発送が遅れます。"],
+    ["2026.09.08", "駐車場は近隣のコインパーキングをご利用ください。"],
+    ["2026.08.30", "スタンプカードは紙のみのお取り扱いです。"],
+    ["2026.08.22", "店内はキャッシュレス決済に対応しておりません。"],
+    ["2026.08.11", "季節の珈琲羊羹が入荷しました。"],
+    ["2026.07.29", "お席のご予約はお電話のみ承ります。"],
+    ["2026.07.15", "インスタグラムは現在更新を停止しています。"],
+    ["2026.06.30", "公式アプリの配信は終了しました。"]
   ];
 
   /** 終わらないお知らせ。フッターは最後まで我慢した人だけが見られる */
@@ -299,17 +345,16 @@
     let loaded = 0, done = false;
     const sentinel = document.createElement("div");
     sentinel.className = "feed-loading";
-    sentinel.textContent = "読み込み中…";
+    sentinel.textContent = "LOADING…";
 
     const addRows = () => {
       const frag = document.createDocumentFragment();
       for (let i = 0; i < 4; i++) {
-        const n = NEWS[(loaded * 4 + i) % NEWS.length];
-        const d = new Date(Date.now() - (loaded * 4 + i) * 86400000);
+        const [d, n] = NEWS[(loaded * 4 + i) % NEWS.length];
         const row = document.createElement("div");
-        row.className = "newsrow";
-        row.innerHTML = '<span class="d">' + ti((d.getMonth() + 1) + "/" + d.getDate(), { size: 11, color: "#8A7A6C", weight: "400" }) + "</span>" +
-          "<span>" + ti(wrap(n, 17), { size: 12, weight: "400" }) + "</span>";
+        row.className = "news-row";
+        row.innerHTML = "<span>" + ten(d, { size: 9, ls: ".14em" }) + "</span>" +
+          "<span>" + ti(wrap(n, 16), { size: 11.5 }) + "</span>";
         frag.appendChild(row);
       }
       host.insertBefore(frag, sentinel);
@@ -320,7 +365,7 @@
         const b = document.createElement("button");
         b.type = "button";
         b.textContent = "この下を飛ばす";   // 極小で目立たない
-        b.onclick = () => { achieve("footer"); sentinel.remove(); host.insertAdjacentHTML("beforeend", footerHtml()); };
+        b.onclick = () => { achieve("footer"); sentinel.remove(); host.insertAdjacentHTML("afterend", footerHtml()); };
         sentinel.appendChild(b);
       }
     };
@@ -336,58 +381,49 @@
     return () => window.removeEventListener("scroll", check);
   }
 
+  const FOOT_LINKS = [
+    ["#about", "ABOUT US"], ["#menu", "MENU"], ["#shop", "ONLINE SHOP"],
+    ["#news", "NEWS"], ["#info", "ACCESS"], ["", "CONTACT"]
+  ];
+
   const footerHtml = () =>
     '<div class="foot">' +
-    tw("珈琲 和ごころ", { size: 16, weight: "800", family: '"Shippori Mincho", serif' }) +
-    tw("東京都架空区架空町一丁目二番三号", { size: 11, weight: "400" }) +
-    '<button type="button" data-phone>' + tw("TEL 03-0000-0000", { size: 12 }) + "</button>" +
-    tw("営業時間・定休日は店頭の掲示をご確認ください", { size: 10, weight: "400" }) +
-    '<button type="button" data-toast="このページは準備中です">' + tw("特定商取引法に基づく表記", { size: 10, weight: "400" }) + "</button>" +
-    '<button type="button" data-toast="このページは準備中です">' + tw("プライバシーポリシー", { size: 10, weight: "400" }) + "</button>" +
-    '<span class="cr">© 2026 珈琲 和ごころ（架空の店です）</span></div>';
+    '<div class="fmark">' + tw("珈琲 和ごころ", { size: 17, weight: "600", family: MIN, ls: ".16em" }) +
+    "<br>" + tw("JIKA-BAISEN COFFEE / SINCE 1974", { size: 8, family: EN, ls: ".24em", color: "#A99C8B" }) + "</div>" +
+    '<div class="fcols">' + FOOT_LINKS.map(([h, n]) =>
+      '<button type="button"' + (h ? ' data-go="' + h + '"' : ' data-toast="このページは準備中です"') + ">" +
+      tw(n, { size: 9, family: EN, ls: ".2em", color: "#C9BEAD" }) + "</button>").join("") + "</div>" +
+    '<div class="sns"><button type="button" data-toast="更新を停止しています">INSTAGRAM</button>' +
+    '<button type="button" data-toast="更新を停止しています">X</button>' +
+    '<button type="button" data-phone>TEL</button></div>' +
+    '<div style="text-align:center;margin-bottom:14px">' +
+    tw("東京都架空区架空町一丁目二番三号\n03-0000-0000（受付 10:00-17:00）", { size: 9.5, color: "#B5A896", align: "center" }) + "</div>" +
+    '<span class="cr">© 2026 KOHI WAGOKORO. ALL RIGHTS RESERVED.</span></div>';
 
   /* ハンバーガーの中に、もう一つハンバーガーがある */
   function showDrawer(depth) {
     const items = [
-      ["#top", "ホーム"], ["#menu", "お品書き"], ["#shop", "オンラインストア"],
-      ["#info", "店舗のご案内"], ["#cart", "お買い物かご"]
+      ["#top", "HOME", "ホーム"], ["#about", "ABOUT", "私たちについて"], ["#menu", "MENU", "お品書き"],
+      ["#shop", "ONLINE SHOP", "オンラインストア"], ["#news", "NEWS", "お知らせ"],
+      ["#info", "ACCESS", "店舗のご案内"], ["#cart", "CART", "お買い物かご"]
     ];
     const l = layer('<div class="drawer">' +
-      (depth > 1 ? '<p class="note">メニュー ＞ ' + "メニュー ＞ ".repeat(depth - 2) + "メニュー</p>" : "") +
-      items.map(([h, n]) => '<button class="row" type="button" data-hash="' + h + '">' + ti(n, { size: 13 }) + "</button>").join("") +
-      '<button class="row" type="button" data-deeper>' + ti("☰ メニュー", { size: 13 }) + "</button>" +
-      '<button class="tiny-link" type="button" data-close style="margin-top:10px">とじる</button></div>', () => l.close());
+      (depth > 1 ? '<p class="note">MENU ＞ ' + "MENU ＞ ".repeat(depth - 2) + "MENU</p>" : "") +
+      items.map(([h, en, jp]) => '<button class="row" type="button" data-hash="' + h + '">' +
+        ten(en, { size: 9 }) + "<br>" + ti(jp, { size: 12 }) + "</button>").join("") +
+      '<button class="row" type="button" data-deeper>' + ten("MENU ☰", { size: 9 }) + "</button>" +
+      '<button class="tiny-link" type="button" data-close style="margin-top:12px">とじる</button></div>', () => l.close());
     l.root.querySelectorAll("[data-hash]").forEach((b) => { b.onclick = () => { l.close(); go(b.dataset.hash); }; });
     l.root.querySelector("[data-deeper]").onclick = () => { l.close(); showDrawer((depth || 1) + 1); };
     l.root.querySelector("[data-close]").onclick = () => l.close();
   }
 
-  /** 豆を挽く。長押ししている間だけ挽け、離すと戻る */
-  function askGrind(onDone) {
-    const l = layer('<div class="pop"><h2>豆を挽いてください</h2>' +
-      "<p>当店では鮮度のため、<b>お客様ご自身で</b>挽いていただいております。</p>" +
-      '<div class="meter"><i id="grBar"></i></div>' +
-      '<button class="press" type="button" id="grBtn"><i id="grFill"></i><span>長押しして挽く</span></button>' +
-      '<p class="note" style="margin-top:8px">指を離すと元に戻ります。</p></div>', null);
-    const bar = l.root.querySelector("#grBar"), fill = l.root.querySelector("#grFill");
-    const stop = longPress(l.root.querySelector("#grBtn"), 3000, (pr) => {
-      bar.style.width = fill.style.width = Math.round(pr * 100) + "%";
-    }, () => {
-      stop();
-      S.ground = true;
-      achieve("grind");
-      l.close();
-      toast("挽き終わりました");
-      onDone();
-    });
-  }
-
   /* サイト内検索。文字が画像なので、何を入れても 0 件になる */
   function showSearch() {
-    const l = layer('<div class="pop"><h2>サイト内検索</h2>' +
+    const l = layer('<div class="pop">' + secHead("SEARCH", "サイト内検索") +
       '<form id="sf"><input type="text" id="sq" placeholder="例: 朝霧ブレンド" autocomplete="off">' +
-      '<button class="btn" type="submit" style="margin-top:10px">検索</button></form>' +
-      '<div id="sr" style="margin-top:12px"></div>' +
+      '<button class="btn" type="submit" style="margin-top:12px">検索</button></form>' +
+      '<div id="sr" style="margin-top:14px"></div>' +
       '<button class="tiny-link" type="button" data-close style="margin-top:12px">とじる</button></div>', () => l.close());
     l.root.querySelector("[data-close]").onclick = () => l.close();
     l.root.querySelector("#sf").onsubmit = (e) => {
@@ -405,17 +441,18 @@
     if (S.cookieDone) return;
     const box = $("cookie");
     box.hidden = false;
-    box.innerHTML = '<p class="note">当サイトは、より良い体験のために Cookie と類似の技術を使用します。詳しくは準備中のページをご覧ください。</p>' +
+    box.innerHTML = '<span class="en">COOKIE POLICY</span>' +
+      '<p class="note" style="margin-top:8px">当サイトは、より良い体験のために Cookie と類似の技術を使用します。詳しくは準備中のページをご覧ください。</p>' +
       '<button class="agree" type="button" id="ckAgree">すべて同意する</button>' +
-      '<button class="settings" type="button" id="ckSet">' + ti("設定", { size: 9, color: "#8A7A6C", weight: "400" }) + "</button>";
+      '<button class="settings" type="button" id="ckSet">' + ti("設定", { size: 9, color: "#8B8175" }) + "</button>";
     $("ckAgree").onclick = () => { S.cookieDone = true; box.hidden = true; toast("Cookie の設定を保存しました"); };
     $("ckSet").onclick = () => {
       achieve("cookie");
-      const l = layer('<div class="pop"><h2>Cookie の設定</h2>' +
+      const l = layer('<div class="pop">' + secHead("COOKIE", "Cookie の設定") +
         ["必須", "機能", "分析", "広告", "その提供先 1,284 社"].map((n) =>
           '<label class="opt-row"><input type="checkbox" checked disabled><span>' + n + "（変更できません）</span></label>").join("") +
-        '<p class="note" style="margin-top:10px">すべて拒否するには、お使いのブラウザの設定をご確認ください。</p>' +
-        '<button class="btn" type="button" data-close style="margin-top:12px">同意して閉じる</button></div>', null);
+        '<p class="note" style="margin-top:12px">すべて拒否するには、お使いのブラウザの設定をご確認ください。</p>' +
+        '<button class="btn" type="button" data-close style="margin-top:14px">同意して閉じる</button></div>', null);
       l.root.querySelector("[data-close]").onclick = () => { l.close(); S.cookieDone = true; box.hidden = true; };
     };
   }
@@ -425,10 +462,32 @@
     const bar = $("reserveBar");
     if (!show) { bar.hidden = true; return; }
     bar.hidden = false;
-    bar.innerHTML = tw("ご予約・お問い合わせは\nお電話のみ承ります", { size: 12, weight: "700" }) +
-      '<button type="button" data-phone>' + tw("03-0000-0000", { size: 15, weight: "900", color: "#FFE27A" }) + "</button>" +
-      '<button class="x" type="button" id="barX">' + ti("×", { size: 9, color: "#8A7A6C", weight: "400" }) + "</button>";
+    bar.innerHTML = '<div>' + tw("RESERVATION", { size: 8, family: EN, ls: ".24em", color: "#A99C8B" }) + "<br>" +
+      tw("ご予約はお電話のみ承ります", { size: 11 }) + "</div>" +
+      '<button type="button" data-phone style="margin-left:auto">' +
+      tw("03-0000-0000", { size: 14, weight: "600", color: "#E9C978", family: MIN }) + "</button>" +
+      '<button class="x" type="button" id="barX">' + ti("×", { size: 9, color: "#8B8175", bg: "#1E1B17", jpeg: 0 }) + "</button>";
     $("barX").onclick = () => { bar.hidden = true; toast("次のページでまた表示されます"); };
+  }
+
+  /** 豆を挽く。長押ししている間だけ挽け、離すと戻る */
+  function askGrind(onDone) {
+    const l = layer('<div class="pop">' + secHead("GRINDING", "豆を挽いてください") +
+      "<p>当店では鮮度のため、<b>お客様ご自身で</b>挽いていただいております。</p>" +
+      '<div class="meter"><i id="grBar"></i></div>' +
+      '<button class="press" type="button" id="grBtn"><i id="grFill"></i><span>長押しして挽く</span></button>' +
+      '<p class="note" style="margin-top:10px">指を離すと元に戻ります。</p></div>', null);
+    const bar = l.root.querySelector("#grBar"), fill = l.root.querySelector("#grFill");
+    const stop = longPress(l.root.querySelector("#grBtn"), 3000, (pr) => {
+      bar.style.width = fill.style.width = Math.round(pr * 100) + "%";
+    }, () => {
+      stop();
+      S.ground = true;
+      achieve("grind");
+      l.close();
+      toast("挽き終わりました");
+      onDone();
+    });
   }
 
   /* ============ お声掛け確認 ============
@@ -561,71 +620,124 @@
         '<div class="card intro">' +
         "<h2>これは <b>最悪の UX</b> のカフェのサイトです</h2>" +
         '<p class="note">架空の喫茶店です。<b>実際に注文が行われることはありません。</b></p>' +
-        "<p>このサイトでは、店名・見出し・営業時間・住所・電話番号・商品名・価格が <b>すべて画像</b> です。" +
-        "文字を選ぶこともコピーすることも検索することもできません。</p>" +
-        '<div class="goal-box"><div class="lbl">ミッション</div>' +
+        "<p>見た目は町の自家焙煎珈琲店のサイトに寄せてあります。ただし、店名・見出し・営業時間・住所・電話番号・" +
+        "商品名・価格は <b>すべて粗い画像</b> です。文字を選ぶこともコピーすることも検索することもできません。</p>" +
+        '<div class="goal-box"><div class="lbl">MISSION</div>' +
         "<p>オンラインストアで <b>朝霧ブレンド 200g</b>（¥1,480）を <b>1袋だけ</b> 注文する</p></div>" +
-        '<p class="note">定期便・ギフト包装・頼んでいない商品が混ざると失敗です。</p>' +
+        '<p class="note">定期便・ギフト包装・頼んでいない商品が混ざると失敗です。よく似た名前の商品が5つ並んでいます。</p>' +
         '<p class="note">買い物の途中で、当店から <b>お声掛けの確認</b>（声を出す or 画面をたたく）が入ります。' +
         "豆は自分で挽き、注文はハンコを長押しして確定します。</p>" +
         '<button class="btn start" type="button" id="startBtn">はじめる</button>' +
-        '<button class="tiny-link" type="button" id="seeRank" style="margin-top:10px">ランキングを見る</button></div>';
+        '<button class="tiny-link" type="button" id="seeRank" style="margin-top:12px">ランキングを見る</button></div>';
       $("startBtn").onclick = () => { S.t0 = performance.now(); scheduleShout(25000); go("#top"); };
       $("seeRank").onclick = showRanking;
     },
 
     top(root) {
       const ev = listeners();
+      const teaser = ["asagiri200", "yuuhi200", "sumibi", "drip10"].map((id) => prodCard(P(id))).join("");
       root.innerHTML =
+        // 全画面に近い看板。1.4秒で勝手に切り替わり、止められない
         '<div class="hero" id="hero">' +
-        slide("shop", "　自家焙煎　\n珈琲 和ごころ", 24, true) +
-        slide("drip", "朝霧ブレンド\n新豆入荷", 22, false) +
-        slide("interior", "店内でのご予約は\nお電話のみ", 20, false) +
-        '<div class="dots">● ○ ○</div></div>' +
-        '<div class="sec-title">' + th("店のご案内") + "</div>" +
-        '<div class="tiles">' +
-        '<button class="tile" type="button" data-go="#menu"><span>📜</span>' + ti("お品書き", { size: 10 }) + "</button>" +
-        '<button class="tile" type="button" data-go="#shop"><span>🫘</span>' + ti("豆の通販", { size: 10 }) + "</button>" +
-        '<button class="tile" type="button" data-go="#info"><span>📍</span>' + ti("店舗案内", { size: 10 }) + "</button></div>" +
-        '<div class="sec-title">' + th("営業時間") + "</div>" +
-        '<div class="card" style="text-align:center"><div class="sheet">' +
-        imgText(HOURS.map(([d, h]) => d + "　" + h).join("\n"), { size: 12, weight: "600", family: '"Shippori Mincho", serif', lh: 1.9, pad: 4 }) +
-        '</div><p class="note" style="margin-top:8px">※営業時間の表は画像です。本日の曜日は表示されません。</p></div>' +
-        '<div class="sec-title">' + th("店内の様子") + "</div>" +
-        '<div class="shot">' + photo("interior", 640, 360) +
-        '<span class="cap">' + tw("店内は全席禁煙です", { size: 12 }) + "</span></div>" +
-        '<div class="sec-title">' + th("お知らせ") + "</div>" +
-        '<div class="card" id="feed"></div>';
+        slide("shop", true) + slide("drip", false) + slide("interior", false) +
+        '<span class="hero-copy">' + tvert("一杯に、朝の霧を。") + "</span>" +
+        '<span class="hero-en">' + tw("JIKA-BAISEN COFFEE\nSINCE 1974 / TOKYO", { size: 9, family: EN, ls: ".22em", color: "#EFE6D6" }) + "</span>" +
+        '<span class="hero-mark">' + tw("珈琲 和ごころ", { size: 15, weight: "600", family: MIN, ls: ".14em" }) + "</span>" +
+        '<span class="scroll-hint">SCROLL<i></i></span></div>' +
 
-      // 1.2 秒で勝手に切り替わる看板。押しても止まらない
+        '<div class="wrap">' +
+        // CONCEPT
+        '<section class="sec fade">' + secHead("CONCEPT", "小さな焙煎所から") +
+        "<p>朝いちばんに立ちのぼる湯気を、そのまま一杯にうつしたい。" +
+        "そう思いながら、この町で五十年ちかく豆を焼いてきました。</p>" +
+        '<div class="zig" style="margin-top:18px"><div class="shot">' + photo("roaster", 640, 360) +
+        '<span class="cap">' + tw("焙煎は毎朝6時から", { size: 10 }) + "</span></div></div>" +
+        '<div style="margin-top:16px">' + ti("当店の珈琲は、浅煎りから深煎りまで五段階。\nお好みに合わせてお選びいただけます。", { size: 11.5 }) + "</div>" +
+        '<button class="btn line" type="button" data-go="#about" style="margin-top:20px">VIEW MORE</button>' +
+        '</section><div class="rule fade"></div>' +
+
+        // MENU
+        '<section class="sec fade">' + secHead("MENU", "お品書き") +
+        '<p class="note">店内のお品書きです。画像のまま掲載しています。</p>' +
+        '<div class="shot" style="margin-top:16px">' + photo("interior", 640, 360) + "</div>" +
+        '<button class="btn line" type="button" data-go="#menu" style="margin-top:20px">VIEW MENU</button>' +
+        '</section><div class="rule fade"></div>' +
+
+        // ONLINE SHOP
+        '<section class="sec fade">' + secHead("ONLINE SHOP", "豆の通信販売") +
+        '<div class="prod-grid">' + teaser + "</div>" +
+        '<button class="btn line" type="button" data-go="#shop" style="margin-top:20px">VIEW ALL ITEMS</button>' +
+        '</section><div class="rule fade"></div>' +
+
+        // NEWS
+        '<section class="sec fade">' + secHead("NEWS", "お知らせ") +
+        '<div class="news-list">' + NEWS.slice(0, 3).map(([d, n]) =>
+          '<div class="news-row"><span>' + ten(d, { size: 9, ls: ".14em" }) + "</span><span>" +
+          ti(wrap(n, 16), { size: 11.5 }) + "</span></div>").join("") + "</div>" +
+        '<button class="btn line" type="button" data-go="#news" style="margin-top:20px">VIEW ALL NEWS</button>' +
+        '</section><div class="rule fade"></div>' +
+
+        // INFORMATION
+        '<section class="sec fade" style="padding-bottom:40px">' + secHead("INFORMATION", "営業時間") +
+        '<div style="text-align:center"><div class="sheet">' +
+        imgText(HOURS.map(([d, h]) => d + "　" + h).join("\n"),
+          { size: 12, weight: "600", family: MIN, lh: 1.95, pad: 4, up: 1.25 }) + "</div></div>" +
+        '<p class="note" style="margin-top:12px">※営業時間の表は画像です。本日の曜日は表示されません。</p>' +
+        '<button class="btn line" type="button" data-go="#info" style="margin-top:20px">ACCESS</button>' +
+        "</section></div>" + footerHtml();
+
       let k = 0;
       const car = setInterval(() => {
-        const slides = $("hero").querySelectorAll(".slide");
-        slides[k].classList.remove("on");
-        k = (k + 1) % slides.length;
-        slides[k].classList.add("on");
-        $("hero").querySelector(".dots").textContent = ["● ○ ○", "○ ● ○", "○ ○ ●"][k];
-      }, 1200);
+        const sl = $("hero").querySelectorAll(".slide");
+        sl[k].classList.remove("on");
+        k = (k + 1) % sl.length;
+        sl[k].classList.add("on");
+      }, 1400);
       ev.on($("hero"), "click", () => { achieve("hero"); toast("写真は自動で切り替わります"); });
+      const stopFade = fadeIn(root);
+      const ck = setTimeout(showCookie, 900);
+      return () => { clearInterval(car); clearTimeout(ck); stopFade(); ev.off(); };
+    },
 
-      const stopFeed = infiniteFeed($("feed"));
-      const ck = setTimeout(showCookie, 600);
-      return () => { clearInterval(car); clearTimeout(ck); stopFeed(); ev.off(); };
+    about(root) {
+      root.innerHTML =
+        '<div class="wrap"><div class="crumbs">HOME / ABOUT</div>' +
+        '<section class="sec">' + secHead("ABOUT US", "私たちについて") +
+        // 縦書きの本文。和モダンの定番だが、画像なので読み上げも翻訳も折り返しもできない
+        '<div style="display:flex;justify-content:center;padding:6px 0 18px">' +
+        tvert("朝の霧のような一杯を", { color: "#23201C", size: 19, jpeg: .45, up: 1.15, bg: "#FAF7F1" }) + "</div>" +
+        "<p>一九七四年、先代がこの町に小さな焙煎所をひらきました。" +
+        "以来、朝六時に火を入れ、その日に出す分だけを焼いています。</p>" +
+        '<div class="zig" style="margin-top:18px">' +
+        '<div class="shot">' + photo("roaster", 640, 360) + '<span class="cap">' + tw("先代から受け継いだ焙煎機", { size: 10 }) + "</span></div>" +
+        '<div class="shot">' + photo("interior", 640, 360) + '<span class="cap">' + tw("十二席のみの店内", { size: 10 }) + "</span></div>" +
+        "</div>" +
+        '<div style="margin-top:20px">' + ti("一、豆はその日に焼いた分だけ。\n二、挽きはお客様のお好みで。\n三、器は美濃の窯元のもの。", { size: 12, lh: 2.1 }) + "</div>" +
+        '<p class="note" style="margin-top:16px">続きは店内の掲示（画像）をご覧ください。</p>' +
+        '</section><div class="rule"></div>' +
+        '<section class="sec" style="padding-bottom:40px">' + secHead("HISTORY", "沿革") +
+        '<div class="info-table">' +
+        [["1974", "架空町に焙煎所を開く"], ["1989", "喫茶の営業をはじめる"], ["2003", "二代目が焙煎を継ぐ"],
+         ["2019", "オンラインでの販売をはじめる"], ["2026", "サイトを新しくする（この状態）"]].map(([y, t]) =>
+          "<div>" + ten(y, { size: 10, ls: ".2em" }) + "<br>" + ti(t, { size: 11.5 }) + "</div>").join("") +
+        "</div></section></div>" + footerHtml();
     },
 
     menu(root) {
       let zoom = 1, pressed = 0;
       root.innerHTML =
-        '<div class="sec-title">' + th("お品書き") + "</div>" +
+        '<div class="wrap"><div class="crumbs">HOME / MENU</div>' +
+        '<section class="sec">' + secHead("MENU", "お品書き") +
         '<div class="board"><div class="inner" id="boardInner"><div class="sheet">' +
-        imgText(BOARD, { size: 11, weight: "600", family: '"Shippori Mincho", serif', color: "#2B1B12", lh: 1.7, pad: 6 }) +
+        imgText(BOARD, { size: 11, weight: "600", family: MIN, lh: 1.75, pad: 6, up: 1.25 }) +
         "</div></div></div>" +
-        '<div class="board-tools"><button type="button" id="zoomOut">－</button><span id="zoomLbl" class="note">100%</span><button type="button" id="zoomIn">＋</button></div>' +
-        '<p class="note" style="margin-top:10px">お品書きは1枚の画像です。テキスト版はご用意しておりません。' +
-        "読みにくい場合は、拡大してご覧ください。</p>" +
-        '<div class="card" style="margin-top:12px"><p class="note">お品書きの中に「豆の販売はオンラインストアでも承ります」と書かれていますが、' +
-        "画像なので押せません。</p>" +
-        '<button class="tiny-link" type="button" data-go="#shop">オンラインストアへ（この文字だけ本物です）</button></div>';
+        '<div class="board-tools"><button type="button" id="zoomOut">－</button>' +
+        '<span id="zoomLbl" class="en">100%</span><button type="button" id="zoomIn">＋</button></div>' +
+        '<p class="note" style="margin-top:12px">お品書きは1枚の画像です。テキスト版はご用意しておりません。' +
+        "読みにくい場合は拡大してご覧ください（拡大するとぼやけます）。</p>" +
+        '<p class="note" style="margin-top:10px">画像の中に「豆の販売はオンラインストアでも承ります」と書かれていますが、押せません。</p>' +
+        '<button class="btn line" type="button" data-go="#shop" style="margin-top:18px">ONLINE SHOP</button>' +
+        "</section></div>" + footerHtml();
       const apply = () => {
         $("boardInner").style.zoom = zoom;
         $("zoomLbl").textContent = Math.round(zoom * 100) + "%";
@@ -636,36 +748,45 @@
       apply();
     },
 
+    news(root) {
+      root.innerHTML =
+        '<div class="wrap"><div class="crumbs">HOME / NEWS</div>' +
+        '<section class="sec" style="padding-bottom:20px">' + secHead("NEWS", "お知らせ") +
+        '<div class="news-list" id="feed"></div>' +
+        "</section></div>";
+      return infiniteFeed($("feed"));
+    },
+
     info(root) {
       root.innerHTML =
-        '<div class="sec-title">' + th("店舗のご案内") + "</div>" +
-        '<div class="card"><div class="rows">' +
-        "<div>" + ti("店名", { size: 11, color: "#8A7A6C", weight: "500" }) + "<br>" + ti("珈琲 和ごころ 架空町本店", { size: 14 }) + "</div>" +
-        "<div>" + ti("所在地", { size: 11, color: "#8A7A6C", weight: "500" }) + "<br>" + ti("東京都架空区架空町一丁目二番三号\n架空ビル 1階", { size: 13, weight: "500" }) + "</div>" +
-        "<div>" + ti("アクセス", { size: 11, color: "#8A7A6C", weight: "500" }) + "<br>" + ti("架空線 架空駅 東口より徒歩7分\n（地図はご用意しておりません）", { size: 13, weight: "500" }) + "</div>" +
-        "<div>" + ti("電話番号", { size: 11, color: "#8A7A6C", weight: "500" }) + "<br>" +
-        '<button type="button" data-phone>' + ti("03-0000-0000", { size: 17, weight: "900" }) + "</button></div>" +
-        "<div>" + ti("定休日", { size: 11, color: "#8A7A6C", weight: "500" }) + "<br>" + ti("水曜日（祝日の場合は営業）", { size: 13, weight: "500" }) + "</div>" +
-        '</div><p class="note" style="margin-top:10px">住所・電話番号は画像のため、コピーも発信もできません。お手数ですが手で書き写してください。</p></div>' +
-        '<div class="sec-title">' + th("地図") + "</div>" +
-        '<div class="shot">' + photo("map", 640, 360) +
-        '<span class="cap">' + tw("現在地からの経路はご案内できません", { size: 11 }) + "</span></div>" +
-        '<p class="note" style="margin-top:8px">地図は画像です。拡大しても番地は書かれていません。' +
-        "印刷してお持ちいただくことをおすすめします。</p>" +
-        '<div class="sec-title">' + th("外観") + "</div>" +
-        '<div class="shot">' + photo("shop", 640, 360) +
-        '<span class="cap">' + tw("水曜日は定休日です", { size: 11 }) + "</span></div>" +
-        '<div class="card" style="margin-top:12px"><h2 style="font-size:15px">本日の閉店時刻をご確認ください</h2>' +
+        '<div class="wrap"><div class="crumbs">HOME / ACCESS</div>' +
+        '<section class="sec">' + secHead("ACCESS", "店舗のご案内") +
+        '<div class="info-table">' +
+        "<div><span class=\"k\">" + ten("SHOP", { size: 9 }) + "</span>" + ti("珈琲 和ごころ 架空町本店", { size: 13 }) + "</div>" +
+        "<div><span class=\"k\">" + ten("ADDRESS", { size: 9 }) + "</span>" + ti("東京都架空区架空町一丁目二番三号\n架空ビル 1階", { size: 12 }) + "</div>" +
+        "<div><span class=\"k\">" + ten("TRAIN", { size: 9 }) + "</span>" + ti("架空線 架空駅 東口より徒歩7分", { size: 12 }) + "</div>" +
+        "<div><span class=\"k\">" + ten("TEL", { size: 9 }) + "</span>" +
+        '<button type="button" data-phone>' + ti("03-0000-0000", { size: 16, weight: "500" }) + "</button></div>" +
+        "<div><span class=\"k\">" + ten("CLOSED", { size: 9 }) + "</span>" + ti("水曜日（祝日の場合は営業）", { size: 12 }) + "</div>" +
+        "</div>" +
+        '<p class="note" style="margin-top:14px">住所・電話番号は画像のため、コピーも発信もできません。お手数ですが手で書き写してください。</p>' +
+        '</section><div class="rule"></div>' +
+        '<section class="sec">' + secHead("MAP", "地図") +
+        '<div class="shot">' + photo("map", 640, 360) + '<span class="cap">' + tw("現在地からの経路はご案内できません", { size: 10 }) + "</span></div>" +
+        '<p class="note" style="margin-top:12px">地図は画像です。拡大しても番地は書かれていません。印刷してお持ちいただくことをおすすめします。</p>' +
+        '<div class="shot" style="margin-top:18px">' + photo("shop", 640, 360) + '<span class="cap">' + tw("水曜日は定休日です", { size: 10 }) + "</span></div>" +
+        '</section><div class="rule"></div>' +
+        '<section class="sec" style="padding-bottom:40px">' + secHead("HOURS", "本日の閉店時刻") +
         '<p class="note">トップページの営業時間の表（画像）を見て、本日の閉店時刻を選んでください。</p>' +
-        '<select id="hq" style="margin-top:8px"><option value="">選択してください</option>' +
+        '<select id="hq" style="margin-top:10px"><option value="">選択してください</option>' +
         ["17:00", "18:00", "20:00", "定休日", "22:00"].map((h) => '<option value="' + h + '">' + h + "</option>").join("") +
-        '</select><button class="btn" type="button" id="hqBtn" style="margin-top:10px">確認する</button>' +
-        '<div id="hqOut" class="note" style="margin-top:8px"></div></div>' +
-        '<div class="card"><p class="note">お席のご予約・お問い合わせはお電話のみ承ります。' +
-        "オンラインでのご予約は準備中です（2019年より準備中）。</p></div>";
+        '</select><button class="btn" type="button" id="hqBtn" style="margin-top:12px">確認する</button>' +
+        '<div id="hqOut" class="note" style="margin-top:10px"></div>' +
+        '<p class="note" style="margin-top:16px">お席のご予約・お問い合わせはお電話のみ承ります。' +
+        "オンラインでのご予約は準備中です（2019年より準備中）。</p>" +
+        "</section></div>" + footerHtml();
       $("hqBtn").onclick = () => {
-        const v = $("hq").value;
-        const ans = closeToday();
+        const v = $("hq").value, ans = closeToday();
         if (!v) { $("hqOut").textContent = "選択してください。"; return; }
         if (v === ans) { achieve("hours"); $("hqOut").textContent = "正解です。本日は " + ans + " に閉店します。"; }
         else $("hqOut").textContent = "ちがいます。画像の表をもう一度ご確認ください。";
@@ -673,50 +794,67 @@
     },
 
     shop(root) {
-      // 「おすすめ順（当社の）」= 宣伝が先、あとは高い順
+      // 「おすすめ順（当店の）」= 宣伝が先、あとは高い順
       const rest = PRODUCTS.filter((p) => !p.pr).sort((a, b) => b.price - a.price);
       const list = PRODUCTS.filter((p) => p.pr).concat(rest);
       root.innerHTML =
-        '<div class="sec-title">' + th("オンラインストア") + "</div>" +
-        '<div class="list-tools" style="display:flex;gap:8px;align-items:center;margin-bottom:8px">' +
-        '<span class="note">' + list.length + "件</span>" +
-        '<select style="flex:1"><option>おすすめ順（当社の）</option><option disabled>価格の安い順（準備中）</option>' +
+        '<div class="wrap"><div class="crumbs">HOME / ONLINE SHOP</div>' +
+        '<section class="sec" style="padding-bottom:40px">' + secHead("ONLINE SHOP", "豆の通信販売") +
+        '<div style="display:flex;gap:10px;align-items:center;margin-bottom:18px">' +
+        '<span class="en">' + list.length + " ITEMS</span>" +
+        '<select style="flex:1"><option>おすすめ順（当店の）</option><option disabled>価格の安い順（準備中）</option>' +
         "<option disabled>新着順（準備中）</option></select></div>" +
-        '<div class="grid">' + list.map(prodCard).join("") + "</div>" +
-        '<p class="note" style="margin-top:12px">商品名は画像です。似た名前の商品が並んでいますので、よくお確かめのうえお選びください。</p>';
+        '<div class="prod-grid">' + list.map(prodCard).join("") + "</div>" +
+        '<p class="note" style="margin-top:18px">商品名は画像です。よく似た名前の商品が並んでいますので、よくお確かめのうえお選びください。</p>' +
+        '<p class="note" style="margin-top:8px">5,000円以上で送料無料。焙煎度合いの点（●）は当店の目安です。</p>' +
+        "</section></div>" + footerHtml();
     },
 
     item(root, id) {
       const p = P(id);
-      if (!p) { root.innerHTML = '<div class="card"><p>この商品は取り扱いを終了しました。</p></div>'; return; }
-      let watchers = 12 + (p.price % 9);
+      if (!p) { root.innerHTML = '<div class="wrap"><section class="sec"><p>この商品は取り扱いを終了しました。</p></section></div>'; return; }
+      let watchers = 8 + (p.price % 9);
       root.innerHTML =
-        '<div class="item-pic">' + photo(p.img, 480, 288) + "</div>" +
-        '<div style="margin-top:10px">' + ti(p.name, { size: 17, weight: "800" }) + "</div>" +
-        "<div>" + imgText(yen(p.price), { size: 24, weight: "900", color: "#B23A2A" }) +
-        ti("　（税込・送料別）", { size: 9, color: "#A4988C", weight: "400" }) + "</div>" +
-        '<div class="urgent">残り1点！（ずっと）　<span id="watch">' + watchers + "</span> 人が見ています</div>" +
-        '<div class="card" style="margin-top:12px">' +
-        '<div class="grind"><div>' + ti("挽き方をお選びください", { size: 12 }) + "</div>" +
-        '<input type="range" id="grind" min="0" max="4" step="1" value="2">' +
-        '<div class="ticks">' + GRINDS.map((g) => ti(g, { size: 8, color: "#8A7A6C", weight: "400" })).join("") + "</div>" +
-        '<div id="grindNow" class="note"></div></div>' +
-        '<label style="margin-top:14px">' + ti("数量", { size: 12 }) + "</label>" +
-        '<select id="qty">' + Array.from({ length: 100 }, (_, i) => "<option" + (i + 1 === 3 ? " selected" : "") + ">" + (i + 1) + "</option>").join("") + "</select>" +
-        '<label class="opt-row"><input type="checkbox" id="oG" checked><span>' + ti("ギフト包装を付ける ＋¥330", { size: 12, weight: "400" }) + "</span></label>" +
-        '<label class="opt-row"><input type="checkbox" id="oS" checked><span>' + ti("定期便をやめない（毎月お届け）", { size: 12, weight: "400" }) + "</span></label>" +
-        '<button class="buy-big" type="button" id="subBuy">定期便で申し込む</button>' +
-        '<button class="buy-small" type="button" id="addCart">1回だけ購入する（かごに入れる）</button>' +
-        '<p class="note" style="margin-top:8px">※定期便の解約はお電話のみ承ります。</p></div>' +
-        '<div class="card"><b style="font-size:13px">お客様の声</b>' +
-        '<div class="review"><span class="stars">★★★★★</span> 香りがよいです。（当店スタッフ）</div>' +
-        '<div class="review"><span class="stars">★★★★★</span> 毎朝飲んでいます。（当店スタッフの家族）</div>' +
-        '<div class="review"><span class="stars">★☆☆☆☆</span> この投稿は店主の判断により非表示になりました。</div></div>';
+        '<div class="crumbs wrap">HOME / ONLINE SHOP / ITEM</div>' +
+        '<div class="item-pic" style="margin-top:12px">' + photo(p.img, 480, 360) + "</div>" +
+        '<div class="wrap"><div class="item-meta">' +
+        "<div>" + ten(p.en, { size: 9, ls: ".24em" }) + "</div>" +
+        "<div>" + ti(p.name, { size: 17, weight: "500" }) + "</div>" +
+        "<div>" + tp(p.price, { size: 20, weight: "500" }) + ti("　（税込・送料別）", { size: 9, color: "#8B8175" }) + "</div>" +
+        (p.soldout ? '<div>' + ti("ただいま品切れです", { size: 12, color: "#8C2B1E" }) + "</div>" : "") +
+        "</div>" +
+        '<dl class="spec" style="margin-top:18px">' +
+        "<dt>産地</dt><dd>" + ti(p.origin, { size: 11 }) + "</dd>" +
+        (p.roast ? "<dt>焙煎度</dt><dd>" + '<span class="roast">' + roastDots(p.roast) + "</span></dd>" : "") +
+        "<dt>テイスティング</dt><dd>" + ti(p.note, { size: 11 }) + "</dd>" +
+        "<dt>発送</dt><dd>" + ti("ご注文から3営業日以内", { size: 11 }) + "</dd></dl>" +
+        '<div class="urgent">残り1点（ずっと）　<span id="watch">' + watchers + "</span> 名が閲覧中</div>" +
+        (p.soldout ? '<button class="btn line" type="button" id="soldBtn" style="margin-top:18px">入荷のお知らせを受け取る</button>' :
+          '<div class="grind"><div>' + ti("挽き方をお選びください", { size: 12 }) + "</div>" +
+          '<input type="range" id="grind" min="0" max="4" step="1" value="2">' +
+          '<div class="ticks">' + GRINDS.map((g) => ti(g, { size: 8, color: "#8B8175" })).join("") + "</div>" +
+          '<div id="grindNow" class="note"></div></div>' +
+          '<label style="margin-top:18px">' + ti("数量", { size: 12 }) + "</label>" +
+          '<select id="qty">' + Array.from({ length: 100 }, (_, i) => "<option" + (i + 1 === 3 ? " selected" : "") + ">" + (i + 1) + "</option>").join("") + "</select>" +
+          '<label class="opt-row"><input type="checkbox" id="oG" checked><span>' + ti("ギフト包装を付ける ＋¥330", { size: 11.5 }) + "</span></label>" +
+          '<label class="opt-row"><input type="checkbox" id="oS" checked><span>' + ti("定期便をやめない（毎月お届け）", { size: 11.5 }) + "</span></label>" +
+          '<button class="buy-big" type="button" id="subBuy">定期便で申し込む</button>' +
+          '<button class="buy-small" type="button" id="addCart">1回だけ購入する（かごに入れる）</button>' +
+          '<p class="note" style="margin-top:10px">※定期便の解約はお電話のみ承ります。</p>') +
+        '<section class="sec">' + secHead("REVIEWS", "お客様の声") +
+        '<div class="review"><span class="stars">★★★★★</span><br>香りがよいです。（当店スタッフ）</div>' +
+        '<div class="review"><span class="stars">★★★★★</span><br>毎朝飲んでいます。（当店スタッフの家族）</div>' +
+        '<div class="review"><span class="stars">★☆☆☆☆</span><br>この投稿は店主の判断により非表示になりました。</div>' +
+        "</section></div>" + footerHtml();
 
-      const w = setInterval(() => { watchers += 1 + (watchers % 2); $("watch").textContent = watchers; }, 2600);
+      const w = setInterval(() => { watchers += 1 + (watchers % 2); const el = $("watch"); if (el) el.textContent = watchers; }, 2600);
+      if (p.soldout) {
+        $("soldBtn").onclick = () => toast("入荷のお知らせは準備中です");
+        return () => clearInterval(w);
+      }
       const showGrind = () => {
         const v = Number($("grind").value);
-        $("grindNow").innerHTML = "ただいまの選択: " + ti(GRINDS[v], { size: 12, weight: "700" });
+        $("grindNow").innerHTML = "ただいまの選択: " + ti(GRINDS[v], { size: 11.5, weight: "500" });
         if (v === 0) achieve("bean");
       };
       $("grind").oninput = showGrind;
@@ -725,7 +863,7 @@
       $("subBuy").onclick = () => { addToCart(p.id, Number($("qty").value), Object.assign(opts(), { sub: true })); go("#cart"); };
       $("addCart").onclick = () => {
         addToCart(p.id, Number($("qty").value), opts());
-        ask("ご一緒にいかがですか？<br>" + ti("珈琲羊羹（5本） ¥1,200", { size: 12, weight: "500" }), [
+        ask("ご一緒にいかがですか？<br>" + ti("珈琲羊羹（5本） ¥1,200", { size: 11.5 }), [
           { label: "かごに入れる", cls: "yes", onClick: () => { addToCart("youkan", 1, {}); toast("かごに入れました"); go("#cart"); } },
           { label: "入れない", cls: "no", onClick: () => { toast("かごに入れました"); go("#cart"); } }
         ]);
@@ -741,30 +879,34 @@
         drawBadge();
         drawMission();
         if (!S.cart.length) {
-          root.innerHTML = '<div class="card"><p>お買い物かごは空です。</p>' +
-            '<button class="btn" type="button" data-go="#shop" style="margin-top:10px">オンラインストアへ</button></div>';
+          root.innerHTML = '<div class="wrap"><section class="sec">' + secHead("CART", "お買い物かご") +
+            "<p>お買い物かごは空です。</p>" +
+            '<button class="btn line" type="button" data-go="#shop" style="margin-top:16px">ONLINE SHOP</button></section></div>';
           return;
         }
         root.innerHTML =
-          '<div class="sec-title">' + th("お買い物かご") + "</div>" +
+          '<div class="wrap"><div class="crumbs">HOME / CART</div>' +
+          '<section class="sec">' + secHead("CART", "お買い物かご") +
           S.cart.map((l, i) => {
             const p = P(l.id);
-            const addon = (key, label) => l[key] ? '<div class="addon"><span>' + ti(ADDONS[key].name + (ADDONS[key].price ? " ¥" + ADDONS[key].price : ""), { size: 11, weight: "500" }) +
+            const addon = (key, label) => l[key] ? '<div class="addon"><span>' +
+              ti(ADDONS[key].name + (ADDONS[key].price ? " ¥" + ADDONS[key].price : ""), { size: 11 }) +
               '</span><button type="button" data-rm="' + key + '" data-i="' + i + '">' + label + "</button></div>" : "";
-            return '<div class="card"><div class="line"><div class="pic">' + photo(p.img, 112, 112) + "</div><div>" +
-              "<div>" + ti(p.name, { size: 12, weight: "700" }) + "</div>" +
+            return '<div class="card"><div class="line"><div class="pic">' + photo(p.img, 128, 128) + "</div><div>" +
+              "<div>" + ti(wrap(p.name, 13), { size: 11.5 }) + "</div>" +
               (l.id === "tumbler" && S.tumblerAdded ? '<div class="note">よく一緒にご購入されています（自動で追加しました）</div>' : "") +
               (p.cat === "豆" ? '<div class="note">挽き方: ' + GRINDS[l.grind] + "</div>" : "") +
-              "<div>" + tp(p.price) + "</div>" +
-              '<div style="margin-top:4px;font-size:12px">数量 <select data-qty="' + i + '" style="width:auto;display:inline-block">' +
+              "<div style=\"margin-top:4px\">" + tp(p.price, { size: 13 }) + "</div>" +
+              '<div style="margin-top:6px;font-size:11px">数量 <select data-qty="' + i + '" style="width:auto;display:inline-block">' +
               Array.from({ length: 100 }, (_, k) => "<option" + (k + 1 === l.qty ? " selected" : "") + ">" + (k + 1) + "</option>").join("") + "</select> " +
               '<button class="tiny-link" type="button" data-del="' + i + '">削除</button></div></div></div>' +
               addon("gift", "包装をやめる") + addon("sub", "定期便を解除する（おすすめしません）") + "</div>";
           }).join("") +
-          '<div class="card"><div class="sum"><span>' + ti("小計", { size: 13 }) + "</span>" + tp(subtotal()) + "</div>" +
+          '<div class="card"><div class="sum"><span>' + ti("小計", { size: 12 }) + "</span>" + tp(subtotal(), { size: 15 }) + "</div>" +
           '<p class="note">送料・手数料はお支払い画面で加算されます。</p>' +
-          '<button class="btn" type="button" id="toReg" style="margin-top:12px">レジに進む</button>' +
-          (S.member ? "" : '<p class="note" style="margin-top:8px">ご注文には <b>会員登録（無料）</b> が必要です。</p>') + "</div>";
+          '<button class="btn" type="button" id="toReg" style="margin-top:14px">レジに進む</button>' +
+          (S.member ? "" : '<p class="note" style="margin-top:10px">ご注文には <b>会員登録（無料）</b> が必要です。</p>') +
+          "</div></section></div>";
         $("toReg").onclick = () => {
           const beans = S.cart.some((l) => P(l.id).cat === "豆");
           if (beans && !S.ground) { askGrind(() => go(S.member ? "#ship" : "#signup")); return; }
@@ -772,8 +914,8 @@
         };
       };
       ev.on(root, "change", (e) => {
-        const s = e.target.closest("[data-qty]");
-        if (s) { S.cart[Number(s.dataset.qty)].qty = Number(s.value); draw(); }
+        const sel = e.target.closest("[data-qty]");
+        if (sel) { S.cart[Number(sel.dataset.qty)].qty = Number(sel.value); draw(); }
       });
       ev.on(root, "click", (e) => {
         const del = e.target.closest("[data-del]");
@@ -802,28 +944,30 @@
     // かごの中に豆があると、レジに進む前に自分で挽かされる
     signup(root) {
       root.innerHTML =
-        '<div class="sec-title">' + th("会員登録") + "</div>" +
-        '<div class="card"><div class="rows">' +
+        '<div class="wrap"><div class="crumbs">HOME / CART / MEMBER</div>' +
+        '<section class="sec" style="padding-bottom:40px">' + secHead("MEMBER", "会員登録") +
+        '<div class="rows">' +
         "<div><label>" + ti("メールアドレス ※", { size: 12 }) + '</label><input type="text" id="f1" autocomplete="off"></div>' +
         "<div><label>" + ti("お名前", { size: 12 }) + '</label><input type="text" id="f2" autocomplete="off"></div>' +
         "<div><label>" + ti("お電話番号 ※", { size: 12 }) + '</label><input type="text" id="f3" autocomplete="off"></div>' +
         "</div>" +
-        '<p class="note" style="margin-top:8px">' + ti("※ の項目は必須です（画像のため読み上げには対応しておりません）", { size: 9, color: "#A4988C", weight: "400" }) + "</p>" +
-        '<label class="opt-row"><input type="checkbox" id="c1"><span>' + ti("利用規約に同意する", { size: 12, weight: "400" }) + "</span></label>" +
-        '<label class="opt-row"><input type="checkbox" id="c2"><span>' + ti("メールマガジンを受け取らないことを希望しない", { size: 12, weight: "400" }) + "</span></label>" +
-        '<div style="margin-top:14px">' + ti("確認コードを画像から書き写してください", { size: 12 }) + "</div>" +
-        '<div class="code" id="codeBox" style="margin-top:6px"></div>' +
-        '<input type="text" id="cap" inputmode="numeric" autocomplete="off" style="margin-top:8px" placeholder="半角数字5桁">' +
-        '<button class="btn" type="button" id="reg" style="margin-top:14px">登録してレジに進む</button>' +
+        '<p class="note" style="margin-top:10px">' + ti("※ の項目は必須です（画像のため読み上げには対応しておりません）", { size: 9, color: "#A79C8E" }) + "</p>" +
+        '<label class="opt-row"><input type="checkbox" id="c1"><span>' + ti("利用規約に同意する", { size: 11.5 }) + "</span></label>" +
+        '<label class="opt-row"><input type="checkbox" id="c2"><span>' + ti("メールマガジンを受け取らないことを希望しない", { size: 11.5 }) + "</span></label>" +
+        '<div style="margin-top:18px">' + ti("確認コードを画像から書き写してください", { size: 12 }) + "</div>" +
+        '<div class="code" id="codeBox" style="margin-top:8px"></div>' +
+        '<input type="text" id="cap" inputmode="numeric" autocomplete="off" style="margin-top:10px" placeholder="半角数字5桁">' +
+        '<button class="btn" type="button" id="reg" style="margin-top:16px">登録してレジに進む</button>' +
         '<div class="err" id="regErr" hidden>入力内容をご確認ください。</div>' +
-        '<button class="tiny-link" type="button" id="guest" style="margin-top:10px">会員登録せずに購入する</button></div>' +
-        '<div class="card"><p class="note">お名前は必須ではありませんが、未入力の場合はご注文を承れません。' +
-        "詳しくは利用規約（準備中）をご覧ください。</p></div>";
+        '<button class="tiny-link" type="button" id="guest" style="margin-top:12px">会員登録せずに購入する</button>' +
+        '<p class="note" style="margin-top:16px">お名前は必須ではありませんが、未入力の場合はご注文を承れません。' +
+        "詳しくは利用規約（準備中）をご覧ください。</p>" +
+        "</section></div>";
       // 確認コードは画像。読みにくくしてあるので、目で読んで書き写すしかない
       let code = "";
       const newCode = () => {
         code = String(Math.floor(10000 + Math.random() * 89999));
-        $("codeBox").innerHTML = imgText(code.split("").join(" "), { size: 22, weight: "900", color: "#6B5B4C" });
+        $("codeBox").innerHTML = imgText(code.split("").join(" "), { size: 22, weight: "700", color: "#6B5B4C", jpeg: .35, up: 1.2, bg: "#EFE9DE" });
         if (params.has("showcode")) console.log("確認コード:", code);   // 動作確認用
       };
       newCode();
@@ -850,17 +994,19 @@
         return a + " － " + b;
       }));
       root.innerHTML =
-        '<div class="sec-title">' + th("お届け日時") + "</div>" +
-        '<div class="card"><label>' + ti("お届け日をお選びください", { size: 12 }) + "</label>" +
+        '<div class="wrap"><div class="crumbs">HOME / CART / DELIVERY</div>' +
+        '<section class="sec" style="padding-bottom:40px">' + secHead("DELIVERY", "お届け日時") +
+        "<label>" + ti("お届け日をお選びください", { size: 12 }) + "</label>" +
         '<div class="days">' + days.map((d, i) =>
           '<button class="day" type="button" data-day="' + i + '">' +
-          ti((d.getMonth() + 1) + "/" + d.getDate(), { size: 10, weight: "700" }) + "</button>").join("") + "</div>" +
-        '<p class="note" style="margin-top:8px">水曜日は定休日ですが、選べます。</p>' +
-        '<label style="margin-top:14px">' + ti("時間帯（15分単位）", { size: 12 }) + "</label>" +
+          ti((d.getMonth() + 1) + "/" + d.getDate(), { size: 10, weight: "500" }) + "</button>").join("") + "</div>" +
+        '<p class="note" style="margin-top:10px">水曜日は定休日ですが、選べます。</p>' +
+        '<label style="margin-top:18px">' + ti("時間帯（15分単位）", { size: 12 }) + "</label>" +
         '<select id="time">' + times.map((t) => "<option>" + t + "</option>").join("") + "</select>" +
-        '<div style="margin-top:14px">' + ti("送料 ¥660（全国一律・ここで加算されます）", { size: 11, weight: "700" }) + "</div>" +
-        '<button class="btn" type="button" id="next" style="margin-top:12px">お支払いへ</button>' +
-        '<div class="err" id="shErr" hidden>入力内容をご確認ください。</div></div>';
+        '<div style="margin-top:18px">' + ti("送料 ¥660（全国一律・ここで加算されます）", { size: 11.5, weight: "500" }) + "</div>" +
+        '<button class="btn" type="button" id="next" style="margin-top:14px">お支払いへ</button>' +
+        '<div class="err" id="shErr" hidden>入力内容をご確認ください。</div>' +
+        "</section></div>";
       const sel = () => root.querySelectorAll(".day").forEach((b, i) => b.classList.toggle("on", S.day === i));
       root.querySelectorAll(".day").forEach((b) => { b.onclick = () => { S.day = Number(b.dataset.day); sel(); drawMission(); }; });
       sel();
@@ -880,23 +1026,26 @@
       ];
       const draw = () => {
         root.innerHTML =
-          '<div class="sec-title">' + th("お支払い") + "</div>" +
-          '<div class="card"><label>' + ti("お支払い方法", { size: 12 }) + "</label>" +
+          '<div class="wrap"><div class="crumbs">HOME / CART / PAYMENT</div>' +
+          '<section class="sec" style="padding-bottom:40px">' + secHead("PAYMENT", "お支払い") +
+          "<label>" + ti("お支払い方法", { size: 12 }) + "</label>" +
           '<div class="pays">' + PAYS.map(([v, n]) =>
             '<label class="pay"><input type="radio" name="pay" value="' + v + '"' + (S.pay === v ? " checked" : "") + ">" +
-            ti(n, { size: 12, weight: "500" }) + "</label>").join("") + "</div>" +
-          '<p class="note" style="margin-top:8px">既定では「あと払い」が選ばれています。</p></div>' +
-          '<div class="card"><div class="sum"><span>' + ti("小計", { size: 12, weight: "500" }) + "</span>" + ti(yen(subtotal()), { size: 13, weight: "700" }) + "</div>" +
-          '<div class="sum"><span>' + ti("送料", { size: 12, weight: "500" }) + "</span>" + ti(yen(SHIP), { size: 13, weight: "700" }) + "</div>" +
-          (S.pay === "later" ? '<div class="sum"><span>' + ti("あと払い手数料", { size: 12, weight: "500" }) + "</span>" + ti(yen(LATER_FEE), { size: 13, weight: "700" }) + "</div>" : "") +
-          (S.pay === "cod" ? '<div class="sum"><span>' + ti("代引手数料", { size: 12, weight: "500" }) + "</span>" + ti(yen(440), { size: 13, weight: "700" }) + "</div>" : "") +
-          '<div class="sum" style="border-top:1px solid var(--line);margin-top:6px;padding-top:8px"><span>' + ti("合計", { size: 14 }) + "</span>" +
-          imgText(yen(grandTotal() + (S.pay === "cod" ? 440 : 0)), { size: 20, weight: "900", color: "#B23A2A" }) + "</div>" +
-          '<p class="note">合計は画像です。控えが必要な場合は画面を撮影してください。</p>' +
-          '<button class="press" type="button" id="fix" style="margin-top:12px;background:var(--bad)">' +
+            ti(n, { size: 11.5 }) + "</label>").join("") + "</div>" +
+          '<p class="note" style="margin-top:10px">既定では「あと払い」が選ばれています。</p>' +
+          '<div class="card" style="margin-top:18px">' +
+          '<div class="sum"><span>' + ti("小計", { size: 11.5 }) + "</span>" + ti(yen(subtotal()), { size: 12, weight: "500" }) + "</div>" +
+          '<div class="sum"><span>' + ti("送料", { size: 11.5 }) + "</span>" + ti(yen(SHIP), { size: 12, weight: "500" }) + "</div>" +
+          (S.pay === "later" ? '<div class="sum"><span>' + ti("あと払い手数料", { size: 11.5 }) + "</span>" + ti(yen(LATER_FEE), { size: 12, weight: "500" }) + "</div>" : "") +
+          (S.pay === "cod" ? '<div class="sum"><span>' + ti("代引手数料", { size: 11.5 }) + "</span>" + ti(yen(440), { size: 12, weight: "500" }) + "</div>" : "") +
+          '<div class="sum" style="border-top:1px solid var(--line);margin-top:8px;padding-top:10px"><span>' + ti("合計", { size: 13 }) + "</span>" +
+          tp(grandTotal() + (S.pay === "cod" ? 440 : 0), { size: 19, weight: "500" }) + "</div>" +
+          '<p class="note">合計は画像です。控えが必要な場合は画面を撮影してください。</p></div>' +
+          '<button class="press" type="button" id="fix" style="margin-top:18px;background:var(--bad)">' +
           '<i id="fixFill"></i><span>長押しでハンコを押す（注文の確定）</span></button>' +
-          '<div class="meter" style="margin-top:6px"><i id="fixBar"></i></div>' +
-          '<button class="tiny-link" type="button" data-go="#cart" style="margin-top:8px">かごに戻る</button></div>';
+          '<div class="meter" style="margin-top:8px"><i id="fixBar"></i></div>' +
+          '<button class="tiny-link" type="button" data-go="#cart" style="margin-top:10px">かごに戻る</button>' +
+          "</section></div>";
         root.querySelectorAll('input[name="pay"]').forEach((r) => { r.onchange = () => { S.pay = r.value; draw(); }; });
         if (stopPress) stopPress();
         stopPress = longPress($("fix"), 1800, (pr) => {
@@ -926,28 +1075,31 @@
 
     done(root) {
       const o = S.order;
-      if (!o) { root.innerHTML = '<div class="card"><p>ご注文が見つかりません。</p></div>'; return; }
+      if (!o) { root.innerHTML = '<div class="wrap"><section class="sec"><p>ご注文が見つかりません。</p></section></div>'; return; }
       const perfect = isPerfect(o);
       stopShout();
       let sent = false;
       root.innerHTML =
-        '<div class="card"><h2>' + (perfect ? "ミッション達成" : "注文は完了しました") + "</h2>" +
-        "<div>" + ti("ご注文番号 " + o.no, { size: 14, weight: "700" }) + "</div>" +
-        '<p class="note" style="margin-top:6px">注文番号は画像です。お問い合わせの際は手で書き写してお伝えください。</p>' +
-        '<div class="sum" style="margin-top:10px"><span>お支払い総額</span><b>' + yen(o.total) + "</b></div>" +
+        '<div class="wrap"><section class="sec">' +
+        secHead("THANK YOU", perfect ? "ミッション達成" : "ご注文を承りました") +
+        "<div>" + ti("ご注文番号 " + o.no, { size: 14, weight: "500" }) + "</div>" +
+        '<p class="note" style="margin-top:8px">注文番号は画像です。お問い合わせの際は手で書き写してお伝えください。</p>' +
+        '<div class="card" style="margin-top:14px">' +
+        '<div class="sum"><span>お支払い総額</span><b>' + yen(o.total) + "</b></div>" +
         '<div class="sum"><span>所要時間</span><b>' + mmss(o.sec) + "</b></div>" +
-        '<div class="sum"><span>実績</span><b>🏆 ' + got.size + " / " + ACH.length + "</b></div>" +
-        "<p" + (perfect ? "" : ' class="err"') + ' style="margin-top:10px">' +
+        '<div class="sum"><span>実績</span><b>🏆 ' + got.size + " / " + ACH.length + "</b></div></div>" +
+        "<p" + (perfect ? ' class="note"' : ' class="err"') + ' style="margin-top:12px">' +
         (perfect ? "朝霧ブレンド 200g を1袋だけ買えました。おめでとうございます。" :
           "余計なものが混ざっています: " + o.lines.map((l) => P(l.id).name + "×" + l.qty + (l.sub ? "（定期便）" : "") + (l.gift ? "（包装）" : "")).join(" / ")) +
-        "</p></div>" +
-        '<div class="card"><label>ニックネーム（12文字まで）</label>' +
+        "</p>" +
+        '<div class="card" style="margin-top:14px"><label>ニックネーム（12文字まで）</label>' +
         '<input type="text" id="nick" maxlength="12" value="' + esc(localStorage.getItem(NAME_KEY) || "") + '">' +
-        '<button class="btn" type="button" id="send" style="margin-top:10px">ランキングに登録</button>' +
-        '<div id="sendOut" class="note" style="margin-top:8px"></div>' +
-        '<div id="rankBox" class="note" style="margin-top:10px"></div></div>' +
-        '<div class="card"><b style="font-size:13px">実績</b>' + achListHtml() + "</div>" +
-        '<button class="btn" type="button" id="again" style="margin-top:12px">もう一度あそぶ</button>';
+        '<button class="btn" type="button" id="send" style="margin-top:12px">ランキングに登録</button>' +
+        '<div id="sendOut" class="note" style="margin-top:10px"></div>' +
+        '<div id="rankBox" class="note" style="margin-top:12px"></div></div>' +
+        '<div class="card"><span class="en">ACHIEVEMENTS</span><div style="margin-top:10px">' + achListHtml() + "</div></div>" +
+        '<button class="btn line" type="button" id="again" style="margin-top:14px">もう一度あそぶ</button>' +
+        "</section></div>" + footerHtml();
       $("send").onclick = () => {
         if (sent) return;
         sent = true;
@@ -972,7 +1124,7 @@
   };
 
   /* ============ 画面遷移 ============ */
-  const CAFE_PAGES = { top: 1, menu: 1, info: 1 };   // 予約バナーを出すページ
+  const CAFE_PAGES = { top: 1, about: 1, menu: 1, news: 1, info: 1 };   // 予約バナーを出すページ（店の案内のページ）
   let cleanupView = null;
   function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
   function render() {
@@ -982,8 +1134,10 @@
     const h = location.hash.slice(1) || (S.t0 ? "top" : "start");
     const [name, rest] = h.split(/[/?](.*)/s);
     const view = VIEWS[name] ? name : (S.t0 ? "top" : "start");
-    $("siteHead").hidden = view === "start";
+    $("siteHead").hidden = $("topbar").hidden = view === "start";
     drawReserveBar(!!CAFE_PAGES[view]);
+    // 英字ナビのうち、いまのページだけ下線を引く（どこにいるかの手がかりはこれだけ）
+    $("gnav").querySelectorAll("[data-go]").forEach((b) => b.classList.toggle("on", b.dataset.go === "#" + view));
     if (view !== "top") $("cookie").hidden = true;
     drawMission();
     const root = $("view");
@@ -1007,12 +1161,13 @@
   document.addEventListener("dblclick", imgHit);
   document.addEventListener("contextmenu", (e) => { if (e.target.matches("img.t")) { e.preventDefault(); imgHit(e); } });
 
-  $("logo").innerHTML = th("珈琲 和ごころ", { size: 18, color: "#F6EFE3" });
+  // 上の細い帯と、店名のロゴ（どちらも画像）
+  $("topbar").innerHTML = tw("5,000円以上のご購入で送料無料　/　FREE SHIPPING OVER ¥5,000", { size: 9, ls: ".08em", color: "#E7DFD1" });
+  $("logo").innerHTML = th("珈琲 和ごころ", { size: 19, ls: ".16em", bg: "#FAF7F1" });
   $("logo").onclick = () => go("#top");
   $("menuBtn").onclick = () => showDrawer(1);
   $("cartBtn").onclick = () => go("#cart");
   $("searchBtn").onclick = showSearch;
-  $("bgmBtn").onclick = () => toast("店内 BGM は配信しておりません");
   $("trophy").onclick = showAchievements;
   $("missionBtn").onclick = showMission;
 
