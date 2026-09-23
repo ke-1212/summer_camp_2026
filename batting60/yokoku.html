@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>バッティング60 数字予告ボード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Barlow+Condensed:ital,wght@1,700;1,800&display=swap" rel="stylesheet">
+<script>
+/* ================= 設定（ここだけ書き換えてください） ================= */
+const CONFIG = {
+  // 予告用Googleフォーム（投票用・記録用とは別）の formResponse URL
+  FORM_ACTION: "https://docs.google.com/forms/d/e/1FAIpQLSdy_Uc0FxBQlyltlA8MrhMXabh1dgPV451UHGH41gBI5APwdQ/formResponse",
+  ENTRY: {
+    name:   "entry.2006307178",  // 名前
+    number: "entry.1421314972",  // 数字（取り下げ時は空欄で送信）
+    date:   "entry.1501315945",  // 日付（サイトが自動で入れます）
+  },
+  // 回答シートのCSV URL（セットアップスクリプトが出力します）
+  CSV_URL: "https://docs.google.com/spreadsheets/d/1NKgr3H1NKehw0Pw0jXP1LxGiaMD6VfpKFno63gh5m80/gviz/tq?tqx=out:csv&headers=1&gid=788637905",
+  // CSVの列番号（0始まり。0列目はタイムスタンプ）
+  COL: { name: 1, number: 2, date: 3 },
+  REFRESH_SEC: 30,
+};
+/* ==================================================================== */
+</script>
+<style>
+:root{--bg:#0a0a0c;--panel:#141417;--line:#2a2a30;--ink:#f4f4f5;--mute:#9a9aa3;--red:#ff2e3a;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;line-height:1.6;
+  background-image:radial-gradient(ellipse 70% 40% at 100% 0%,#2a0a0d 0%,transparent 70%);background-attachment:fixed}
+.wrap{max-width:560px;margin:0 auto;padding:20px 18px 60px}
+.num{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-style:italic;font-weight:800}
+header{padding:8px 0 16px;border-bottom:2px solid var(--red)}
+h1{margin:0;font-size:28px;font-weight:900;letter-spacing:-.02em;line-height:1.1}
+h1 .num{color:var(--red);font-size:38px;margin-left:2px}
+header p{margin:8px 0 0;font-size:13px;color:var(--mute)}
+section{margin-top:24px}
+h2{font-size:15px;font-weight:700;margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline}
+h2 small{font-weight:400;color:var(--mute);font-size:12px}
+.form{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.frow{display:grid;grid-template-columns:1fr 96px;gap:10px}
+label{font-size:12px;color:var(--mute);display:block;margin-bottom:4px}
+input{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);font:inherit;font-size:17px;padding:11px 12px;border-radius:8px}
+input#num{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-style:italic;font-weight:800;font-size:26px;padding:4px 12px;text-align:center}
+input:focus{outline:2px solid var(--red);outline-offset:1px;border-color:transparent}
+.btns{display:flex;gap:8px;margin-top:12px}
+.go{flex:1;background:var(--red);color:#fff;border:0;border-radius:8px;font:inherit;font-weight:900;font-size:16px;padding:13px;cursor:pointer}
+.go:disabled{background:#333;color:#777;cursor:not-allowed}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--mute);border-radius:8px;font:inherit;font-size:13px;padding:0 14px;cursor:pointer}
+.msg{font-size:13px;margin-top:8px;min-height:1.2em;color:var(--mute)}
+.msg.err{color:var(--red)}
+.pub{font-size:11.5px;color:var(--mute);margin-top:6px}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.cell{position:relative;aspect-ratio:1.05;background:var(--panel);border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#55555f;cursor:default;padding:0;font-family:inherit}
+.cell .n{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-style:italic;font-weight:800}
+.cell.one{color:var(--ink);border-color:#55555f;cursor:pointer}
+.cell.dup{background:var(--red);border-color:var(--red);color:#fff;cursor:pointer}
+.cell.mine{box-shadow:0 0 0 2px #fff inset}
+.cell .c{position:absolute;top:2px;right:5px;font-size:11px;font-weight:700;font-family:"Noto Sans JP",sans-serif;font-style:normal}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--mute);margin-top:8px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.list{margin:0;padding:0;list-style:none}
+.list li{display:grid;grid-template-columns:54px 1fr;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.list .num{font-size:30px;line-height:1;text-align:right}
+.list .dupn{color:var(--red)}
+.list .who{font-size:14px}
+.list .tag{font-size:11px;font-weight:700;color:var(--red);margin-right:6px}
+.list li.focus{background:#1d0e10}
+.empty{color:var(--mute);font-size:13px;padding:10px 0}
+.stat{display:flex;gap:18px;font-size:12px;color:var(--mute);margin-bottom:10px}
+.stat b{font-size:22px;color:var(--ink);margin-right:3px}
+.stat .red b{color:var(--red)}
+.demo{background:#2a2410;border:1px solid #5c4d17;color:#f2d98a;font-size:12.5px;padding:10px 12px;border-radius:8px;margin-top:14px}
+iframe{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>バッティング<span class="num">60</span> 数字予告</h1>
+    <p><span id="today"></span>　今日出す数字を予告しておくボードです。本投票は投票フォームで行ってください。</p>
+  </header>
+  <div class="demo" id="demo" hidden>接続設定がまだです（CONFIG を設定してください）。いまはこの端末の中だけで動作確認できます。</div>
+
+  <section class="form">
+    <div class="frow">
+      <div><label for="name">名前</label><input id="name" maxlength="30" autocomplete="nickname"></div>
+      <div><label for="num">数字</label><input id="num" type="number" inputmode="numeric" min="1" max="60" placeholder="—"></div>
+    </div>
+    <div class="btns">
+      <button class="go" id="send" disabled>予告する</button>
+      <button class="ghost" id="withdraw" disabled>取り下げ</button>
+    </div>
+    <div class="msg" id="msg"></div>
+    <div class="pub">名前と数字は全員に公開されます。1人1つまでで、送り直すと上書きされます。</div>
+  </section>
+
+  <section>
+    <h2>今日の予告 <small id="updated"></small></h2>
+    <div class="stat"><span><b id="sPeople">0</b>人</span><span><b id="sNums">0</b>種類</span><span class="red"><b id="sDup">0</b>か所で被り</span></div>
+    <div class="grid" id="grid"></div>
+    <div class="legend"><span><i style="background:#55555f"></i>1人</span><span><i style="background:var(--red)"></i>被り</span><span><i style="box-shadow:0 0 0 2px #fff inset;background:transparent"></i>自分</span></div>
+  </section>
+
+  <section>
+    <h2>一覧 <small>数字の小さい順</small></h2>
+    <ul class="list" id="list"></ul>
+  </section>
+</div>
+
+<form id="gf" method="POST" target="sink" hidden></form>
+<iframe name="sink" title="送信"></iframe>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const norm = s => (s||"").normalize("NFKC").trim();
+  const store = { get(k){try{return localStorage.getItem("b60y:"+k)}catch{return null}}, set(k,v){try{localStorage.setItem("b60y:"+k,v)}catch{}} };
+  const esc = s => s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+  const todayJST = () => new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Tokyo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  const TODAY = todayJST();
+  $("today").textContent = TODAY.slice(5).replace("-","/");
+
+  // サーバー側の予告（名前→数字）と、自分の送信直後の上書き（反映待ちの間用）
+  let remote = new Map();
+  let pending = null; try { pending = JSON.parse(store.get("pending")||"null"); } catch {}
+  if (pending && pending.date !== TODAY) pending = null;
+  let focusNum = null;
+
+  $("name").value = store.get("name") || "";
+
+  /* ---- CSV ---- */
+  function parseCSV(t){
+    const rows=[]; let r=[], f="", q=false;
+    for (let i=0;i<t.length;i++){
+      const c=t[i];
+      if (q){ if(c==='"'){ if(t[i+1]==='"'){f+='"';i++} else q=false } else f+=c; }
+      else if (c==='"') q=true;
+      else if (c===","){ r.push(f); f=""; }
+      else if (c==="\n"||c==="\r"){ if(c==="\r"&&t[i+1]==="\n") i++; r.push(f); rows.push(r); r=[]; f=""; }
+      else f+=c;
+    }
+    if (f!==""||r.length){ r.push(f); rows.push(r); }
+    return rows;
+  }
+  async function load(){
+    if (!CONFIG.CSV_URL) { render(); return; }
+    try{
+      const res = await fetch(CONFIG.CSV_URL + (CONFIG.CSV_URL.includes("?")?"&":"?") + "t=" + Date.now(), {cache:"no-store"});
+      if (!res.ok) throw new Error(res.status);
+      const rows = parseCSV(await res.text()).slice(1);
+      const m = new Map();
+      for (const row of rows){               // シートは古い順 → 後の行で上書き
+        if (norm(row[CONFIG.COL.date]) !== "D" + TODAY) continue;
+        const name = norm(row[CONFIG.COL.name]); if (!name) continue;
+        const n = parseInt(norm(row[CONFIG.COL.number]),10);
+        if (n>=1 && n<=60) m.set(name, n); else m.delete(name);  // 空欄＝取り下げ
+      }
+      remote = m;
+      // 自分の送信がシートに反映されたら pending を消す
+      if (pending && ((pending.n==null && !m.has(pending.name)) || m.get(pending.name)===pending.n)) { pending=null; store.set("pending","null"); }
+      $("updated").textContent = "更新 " + new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"});
+    }catch(e){ $("updated").textContent = "読み込みに失敗しました"; }
+    render();
+  }
+
+  function current(){
+    const m = new Map(remote);
+    if (pending){ if (pending.n==null) m.delete(pending.name); else m.set(pending.name, pending.n); }
+    return m;
+  }
+
+  /* ---- 描画 ---- */
+  const grid = $("grid");
+  for (let i=1;i<=60;i++){ const b=document.createElement("button"); b.type="button"; b.className="cell"; b.dataset.n=i; b.innerHTML=`<span class="n">${i}</span>`; grid.appendChild(b); }
+  grid.onclick = e => { const b=e.target.closest(".cell"); if(!b||!b.classList.contains("one")&&!b.classList.contains("dup")) return;
+    focusNum=+b.dataset.n; render(); const li=document.querySelector(`#list li[data-n="${focusNum}"]`); li&&li.scrollIntoView({behavior:"smooth",block:"center"}); };
+
+  function render(){
+    const m = current(), me = norm($("name").value);
+    const byNum = new Map();
+    for (const [name,n] of m){ if(!byNum.has(n)) byNum.set(n,[]); byNum.get(n).push(name); }
+    let dup=0;
+    grid.querySelectorAll(".cell").forEach(c=>{
+      const n=+c.dataset.n, names=byNum.get(n)||[];
+      c.className="cell"+(names.length>1?" dup":names.length===1?" one":"")+(me&&m.get(me)===n?" mine":"");
+      c.innerHTML=`<span class="n">${n}</span>${names.length>1?`<span class="c">×${names.length}</span>`:""}`;
+      c.setAttribute("aria-label", names.length?`${n}：${names.join("、")}`:`${n}：なし`);
+      if (names.length>1) dup++;
+    });
+    $("sPeople").textContent=m.size; $("sNums").textContent=byNum.size; $("sDup").textContent=dup;
+    const nums=[...byNum.keys()].sort((a,b)=>a-b);
+    $("list").innerHTML = nums.length ? nums.map(n=>{
+      const names=byNum.get(n).sort((a,b)=>a.localeCompare(b,"ja")), d=names.length>1;
+      return `<li data-n="${n}" class="${n===focusNum?"focus":""}"><span class="num ${d?"dupn":""}">${n}</span><span class="who">${d?`<span class="tag">被り</span>`:""}${names.map(esc).join("、")}</span></li>`;
+    }).join("") : `<li class="empty">まだ予告はありません</li>`;
+
+    const v=+$("num").value, okName=!!me, okNum=Number.isInteger(v)&&v>=1&&v<=60;
+    $("send").disabled = !(okName&&okNum);
+    $("withdraw").disabled = !(okName && m.has(me));
+    if (okName && okNum && byNum.has(v)) {
+      const others=byNum.get(v).filter(x=>x!==me);
+      setMsg(others.length?`${v} は ${others.join("、")} さんも予告しています`:"", !!others.length);
+    } else if (!$("msg").dataset.keep) setMsg("");
+  }
+  function setMsg(t,err){ $("msg").textContent=t; $("msg").className="msg"+(err?" err":""); }
+
+  function submit(n){
+    const name = norm($("name").value); store.set("name", name);
+    const f=$("gf"); f.innerHTML="";
+    const add=(k,v)=>{const i=document.createElement("input");i.type="hidden";i.name=k;i.value=v;f.appendChild(i)};
+    add(CONFIG.ENTRY.name,name); add(CONFIG.ENTRY.number,n==null?"":String(n)); add(CONFIG.ENTRY.date,"D"+TODAY);
+    if (CONFIG.FORM_ACTION){ f.action=CONFIG.FORM_ACTION; f.submit(); }
+    pending={name,n,date:TODAY}; store.set("pending",JSON.stringify(pending));
+    $("msg").dataset.keep="1"; setMsg(n==null?"予告を取り下げました":`${n} を予告しました（全員の画面への反映は数分かかることがあります）`);
+    setTimeout(()=>{ delete $("msg").dataset.keep; },4000);
+    render();
+  }
+  $("send").onclick=()=>submit(+$("num").value);
+  $("withdraw").onclick=()=>{ if(confirm("今日の予告を取り下げますか？")){ $("num").value=""; submit(null); } };
+  $("name").oninput=render; $("num").oninput=render;
+
+  $("demo").hidden = !!(CONFIG.FORM_ACTION && CONFIG.CSV_URL);
+  load(); setInterval(load, CONFIG.REFRESH_SEC*1000);
+})();
+</script>
+</body>
+</html>
